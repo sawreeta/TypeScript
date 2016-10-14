@@ -14,7 +14,7 @@ namespace ts.server {
 
         constructor(private readonly host: ServerHost, private readonly project: Project, private readonly cancellationToken: HostCancellationToken) {
             this.getCanonicalFileName = ts.createGetCanonicalFileName(this.host.useCaseSensitiveFileNames);
-            this.resolvedModuleNames = createFileMap<Map<ResolvedModuleWithFailedLookupLocations>>();
+            this.resolvedModuleNames = createFileMap<Map<ResolvedModuleWithFailedLookupLocations>>(); //move construction to the property declaration
             this.resolvedTypeReferenceDirectives = createFileMap<Map<ResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
 
             if (host.trace) {
@@ -27,12 +27,16 @@ namespace ts.server {
             };
         }
 
-        private resolveNamesWithLocalCache<T extends { failedLookupLocations: string[] }, R extends { resolvedFileName?: string }>(
+        //was: private resolveNamesWithLocalCache<T extends { failedLookupLocations: string[] }, R extends { resolvedFileName?: string }>(
+        //which took me hours to track down... `R extends { resolvedFileName?: string }` doesn't actually constrain R.
+        //This was added by https://github.com/Microsoft/TypeScript/commit/2671668d8637d8984b8f861e1234ab06e70730e8
+        private resolveNamesWithLocalCache<T extends { failedLookupLocations: string[] }, R>(
             names: string[],
             containingFile: string,
             cache: ts.FileMap<Map<T>>,
             loader: (name: string, containingFile: string, options: CompilerOptions, host: ModuleResolutionHost) => T,
-            getResult: (s: T) => R): R[] {
+            getResult: (s: T) => R,
+            getResultFileName: (result: R) => string): R[] {
 
             const path = toPath(containingFile, this.host.getCurrentDirectory(), this.getCanonicalFileName);
             const currentResolutionsInFile = cache.get(path);
@@ -40,6 +44,7 @@ namespace ts.server {
             const newResolutions: Map<T> = createMap<T>();
             const resolvedModules: R[] = [];
             const compilerOptions = this.getCompilationSettings();
+            //what if 2 files are deleted? This won't work in general...
             const lastDeletedFileName = this.project.projectService.lastDeletedFile && this.project.projectService.lastDeletedFile.fileName;
 
             for (const name of names) {
@@ -72,7 +77,8 @@ namespace ts.server {
 
                 const result = getResult(resolution);
                 if (result) {
-                    if (result.resolvedFileName && result.resolvedFileName === lastDeletedFileName) {
+                    const resultFileName = getResultFileName(result);
+                    if (resultFileName &&  resultFileName === lastDeletedFileName) {
                         return false;
                     }
                     return true;
@@ -101,11 +107,11 @@ namespace ts.server {
         }
 
         resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string): ResolvedTypeReferenceDirective[] {
-            return this.resolveNamesWithLocalCache(typeDirectiveNames, containingFile, this.resolvedTypeReferenceDirectives, resolveTypeReferenceDirective, m => m.resolvedTypeReferenceDirective);
+            return this.resolveNamesWithLocalCache(typeDirectiveNames, containingFile, this.resolvedTypeReferenceDirectives, resolveTypeReferenceDirective, m => m.resolvedTypeReferenceDirective, r => r.resolvedFileName);
         }
 
         resolveModuleNames(moduleNames: string[], containingFile: string): ResolvedModule[] {
-            return this.resolveNamesWithLocalCache(moduleNames, containingFile, this.resolvedModuleNames, this.resolveModuleName, m => m.resolvedModule);
+            return this.resolveNamesWithLocalCache(moduleNames, containingFile, this.resolvedModuleNames, this.resolveModuleName, m => m.resolvedModule, resolvedPath);
         }
 
         getDefaultLibFileName() {

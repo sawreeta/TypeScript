@@ -1345,11 +1345,9 @@ namespace ts {
             return resolveExternalModule(location, moduleReferenceLiteral.text, moduleNotFoundError, moduleReferenceLiteral);
         }
 
-        //neater
         //This should maybe be done in program.ts, not in checker.
-        //Con: better to do diagnostics in checker!
-        //Can't do diagnostics *right here* because we want to use patternAmbientModules as a backup
-        function floof({resolvedTsFileName, resolvedJsFileName}: ResolvedModule): string | undefined {
+        //SO: now doing this in processImportedModules
+        /*function floof({resolvedTsFileName, resolvedJsFileName}: ResolvedModule): string | undefined {
             if (resolvedTsFileName) {
                 return (fileExtensionIs(resolvedTsFileName, '.tsx') && !compilerOptions.jsx) ? undefined : resolvedTsFileName;
             }
@@ -1362,11 +1360,11 @@ namespace ts {
                     return resolvedJsFileName;
                 }
             }
-        }
+        }*/
 
         //name
         function goof(resolvedModule: ResolvedModule): SourceFile | undefined {
-            const f = floof(resolvedModule);
+            const f = resolvedPath(resolvedModule);
             return f && host.getSourceFile(f);
         }
 

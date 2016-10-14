@@ -131,9 +131,9 @@ namespace ts {
     export function moduleResolutionIsEqualTo(oldResolution: ResolvedModule, newResolution: ResolvedModule): boolean {
         //NOTE: we consider { ts: foo, js: bar } equal to { ts: foo, js: undefined } ...
         return oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport &&
-            (oldResolution.resolvedTsFileName || newResolution.resolvedTsFileName)
+            ((oldResolution.resolvedTsFileName || newResolution.resolvedTsFileName)
                 ? oldResolution.resolvedTsFileName === newResolution.resolvedTsFileName
-                : oldResolution.resolvedJsFileName === newResolution.resolvedJsFileName;
+                : oldResolution.resolvedJsFileName === newResolution.resolvedJsFileName);
     }
 
     /* @internal */
@@ -142,7 +142,6 @@ namespace ts {
     }
 
     /* @internal */
-    //working on this...
     export function hasChangesInResolutions<T>(names: string[], newResolutions: T[], oldResolutions: Map<T>, comparer: (oldResolution: T, newResolution: T) => boolean): boolean {
         if (names.length !== newResolutions.length) {
             return false;

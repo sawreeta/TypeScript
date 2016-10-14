@@ -544,6 +544,7 @@ namespace ts {
                         const moduleNames = map(concatenate(newSourceFile.imports, newSourceFile.moduleAugmentations), getTextOfLiteral);
                         const resolutions = resolveModuleNamesWorker(moduleNames, newSourceFilePath);
                         // ensure that module resolution results are still correct
+                        debugger;
                         const resolutionsChanged = hasChangesInResolutions(moduleNames, resolutions, oldSourceFile.resolvedModules, moduleResolutionIsEqualTo);
                         if (resolutionsChanged) {
                             return false;
@@ -553,6 +554,7 @@ namespace ts {
                         const typesReferenceDirectives = map(newSourceFile.typeReferenceDirectives, x => x.fileName);
                         const resolutions = resolveTypeReferenceDirectiveNamesWorker(typesReferenceDirectives, newSourceFilePath);
                         // ensure that types resolutions are still correct
+                        debugger;
                         const resolutionsChanged = hasChangesInResolutions(typesReferenceDirectives, resolutions, oldSourceFile.resolvedTypeReferenceDirectiveNames, typeDirectiveIsEqualTo);
                         if (resolutionsChanged) {
                             return false;
@@ -1341,11 +1343,11 @@ namespace ts {
                 const js = resolution.resolvedJsFileName;
                 Debug.assert(!!js); //else the resolution should be undefined
                 if (!options.allowJs) {
-                   programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_allowJs_is_not_set, ts));
+                    programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_allowJs_is_not_set, ts));
                     return nada;
                 }
                 else if (!options.jsx && fileExtensionIs(js, '.jsx')) {
-                   programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_jsx_is_not_set, js));
+                    programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_jsx_is_not_set, js));
                     return nada;
                 }
                 else {
@@ -1360,6 +1362,7 @@ namespace ts {
                 file.resolvedModules = createMap<ResolvedModule>();
                 const moduleNames = map(concatenate(file.imports, file.moduleAugmentations), getTextOfLiteral);
                 const resolutions = resolveModuleNamesWorker(moduleNames, getNormalizedAbsolutePath(file.fileName, currentDirectory));
+                Debug.assert(resolutions.length === moduleNames.length);//valid?
                 for (let i = 0; i < moduleNames.length; i++) {
                     const resolution = resolutions[i];
                     setResolvedModule(file, moduleNames[i], resolution);
