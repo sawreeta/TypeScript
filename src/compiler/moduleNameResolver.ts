@@ -17,6 +17,7 @@ namespace ts {
     function createResolved(resolvedTsFileName: string | undefined, resolvedJsFileName: string | undefined): Resolved {
         Debug.assert(!resolvedTsFileName || fileExtensionIsAny(resolvedTsFileName, supportedTypeScriptExtensions));
         Debug.assert(!resolvedJsFileName || fileExtensionIsAny(resolvedJsFileName, supportedJavascriptExtensions));
+        Debug.assert(!!resolvedTsFileName || !!resolvedJsFileName);
         return { resolvedTsFileName, resolvedJsFileName }
     }
 
@@ -701,17 +702,26 @@ namespace ts {
         //return forEach(allSupportedExtensions, ext =>
         //    !(state.skipTsx && isJsxOrTsxExtension(ext)) && tryFile(candidate + ext, failedLookupLocation, onlyRecordFailures, state));
 
-        //TODO: passed extensions around wrong then, should have type Extensions = { js: string[], ts: string[] }, or even better, an enum
+        //TODO: passed extensions around wrong! should have type Extensions = { js: string[], ts: string[] }, or even better, an enum
         let ts: string;
+        for (const ext of extensions) {
+            if (contains(supportedTypeScriptExtensions, ext) && !(ext === '.tsx' && state.skipTsx)) {
+                ts = ts || tryFile(candidate + ext, failedLookupLocations, onlyRecordFailures, state);
+            }
+        }
+        if (ts) {
+            return createResolved(ts, undefined);
+        }
+
+        //only look for js if we didn't get ts
         let js: string;
         for (const ext of extensions) {
-            if (!(state.skipTsx && isJsxOrTsxExtension(ext))) {
-                if (ext === '.js' || ext === '.jsx') {
-                    js = js || tryFile(candidate + ext, failedLookupLocations, onlyRecordFailures, state);
-                } else {
-                    ts = ts || tryFile(candidate + ext, failedLookupLocations, onlyRecordFailures, state);
-                }
+            if (ext === '.js' || (ext === '.jsx' && !state.skipTsx)) {
+                js = js || tryFile(candidate + ext, failedLookupLocations, onlyRecordFailures, state);
             }
+        }
+        if (js) {
+            return createResolved(undefined, js);
         }
 
         //TODO: skipTsx handling should be done elsewhere
@@ -719,10 +729,6 @@ namespace ts {
         //    !(state.skipTsx && ext === ".tsx") && tryFile(candidate + ext, failedLookupLocations, onlyRecordFailures, state))
         //const js = forEach(supportedJavascriptExtensions, ext =>
         //    !(state.skipTsx && ext === ".jsx") && tryFile(candidate + ext, failedLookupLocations, onlyRecordFailures, state))
-
-        if (ts || js) {
-            return createResolved(ts, js);
-        }
     }
 
     /** Return the file if it exists. */

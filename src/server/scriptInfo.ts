@@ -87,7 +87,7 @@ namespace ts.server {
             if (this.containingProjects.length === 0) {
                 return Errors.ThrowNoProject();
             }
-            Debug.assert(this.containingProjects.length !== 0);
+            Debug.assert(this.containingProjects.length !== 0);//pointles assert
             return this.containingProjects[0];
         }
 

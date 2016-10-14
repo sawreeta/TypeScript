@@ -2139,6 +2139,7 @@ namespace ts.projectSystem {
 
     describe("rename a module file and rename back", () => {
         it("should restore the states for inferred projects", () => {
+            debugger;
             const moduleFile = {
                 path: "/a/b/moduleFile.ts",
                 content: "export function bar() { };"
@@ -2183,6 +2184,7 @@ namespace ts.projectSystem {
             host.runQueuedTimeoutCallbacks();
 
             diags = <server.protocol.Diagnostic[]>session.executeCommand(getErrRequest).response;
+            console.log(diags[0]);
             assert.equal(diags.length, 0);
         });
 
