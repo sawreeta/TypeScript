@@ -3274,36 +3274,40 @@ namespace ts {
         getDirectories?(path: string): string[];
     }
 
-    //neater
+    //name
+    //should likely be internal to moduleNameResolver
     export interface Resolved {
-        __resolvedModuleBrand: any;
-        resolvedTsFileName?: string;
-        resolvedJsFileName?: string;
+        //__resolvedBrand: any;
+        resolvedTsFileName: string | undefined;
+        resolvedJsFileName: string | undefined;
+    }
+    export function resolvedTsOnly(resolved: Resolved | undefined): string | undefined {
+        return resolved && resolved.resolvedTsFileName;
+    }
+    //move
+    export function resolvedPath({ resolvedTsFileName, resolvedJsFileName }: ResolvedModule): string {
+        return resolvedTsFileName || resolvedJsFileName;
     }
 
-    //changing this is a breaking change!
+    //changing this is a breaking change! host would have to change!
     export interface ResolvedModule {
-        __resolvedModuleBrand: any;
+        //__resolvedModuleBrand: any;
         //one of these must be set; else use 'undefined'
         //TODO:document
-        resolvedTsFileName?: string;
+        resolvedTsFileName: string | undefined;
         //TODO:document
-        resolvedJsFileName?: string;
+        resolvedJsFileName: string | undefined;
         /*
          * Denotes if 'resolvedFileName' is isExternalLibraryImport and thus should be proper external module:
          * - be a .d.ts file
          * - use top level imports\exports
          * - don't use tripleslash references
          */
-        isExternalLibraryImport?: boolean;
-    }
-    //move
-    export function resolvedModulePath({ resolvedTsFileName, resolvedJsFileName }: ResolvedModule): string {
-        return resolvedTsFileName || resolvedJsFileName;
+        isExternalLibraryImport: boolean;
     }
 
     export interface ResolvedModuleWithFailedLookupLocations {
-        resolvedModule: ResolvedModule;
+        resolvedModule: ResolvedModule | undefined;
         failedLookupLocations: string[];
     }
 
@@ -3339,6 +3343,7 @@ namespace ts {
          * If resolveModuleNames is implemented then implementation for members from ModuleResolutionHost can be just
          * 'throw new Error("NotImplemented")'
          */
+        //this method is affected by the change!
         resolveModuleNames?(moduleNames: string[], containingFile: string): ResolvedModule[];
         /**
          * This method is a companion for 'resolveModuleNames' and is used to resolve 'types' references to actual type declaration files

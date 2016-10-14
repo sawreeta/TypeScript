@@ -127,8 +127,11 @@ namespace ts {
     }
 
     /* @internal */
+    //review
     export function moduleResolutionIsEqualTo(oldResolution: ResolvedModule, newResolution: ResolvedModule): boolean {
-        return oldResolution.resolvedFileName === newResolution.resolvedFileName && oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport;
+        return oldResolution.resolvedTsFileName === newResolution.resolvedJsFileName
+            && oldResolution.resolvedJsFileName === newResolution.resolvedJsFileName
+            && oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport;
     }
 
     /* @internal */

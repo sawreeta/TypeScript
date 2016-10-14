@@ -266,7 +266,7 @@ namespace Harness.LanguageService {
                     for (const module of preprocessInfo.importedFiles) {
                         const resolutionInfo = ts.resolveModuleName(module.fileName, fileName, compilerOptions, moduleResolutionHost);
                         if (resolutionInfo.resolvedModule) {
-                            imports[module.fileName] = resolutionInfo.resolvedModule.resolvedFileName;
+                            imports[module.fileName] = ts.resolvedPath(resolutionInfo.resolvedModule);
                         }
                     }
                     return JSON.stringify(imports);

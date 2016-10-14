@@ -824,7 +824,7 @@ namespace ts.projectSystem {
             }`;
             host.reloadFS(files);
             host.triggerFileWatcherCallback(configFile.path);
-            checkProjectActualFiles(project, [file1.path, classicModuleFile.path]);
+            checkProjectActualFiles(project, [file1.path, classicModuleFile.path]); //this is failing
             checkNumberOfInferredProjects(projectService, 1);
         });
 

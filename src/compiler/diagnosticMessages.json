@@ -2861,6 +2861,14 @@
         "category": "Error",
         "code": 6140
     },
+    "Module was resolved to '{0}', but '--jsx' is not set.": {
+        "category": "Error",
+        "code": 6141
+    },
+    "Module was resolved to '{0}', but '--allowJs' is not set.": {
+        "category": "Error",
+        "code": 6142
+    },
     "Variable '{0}' implicitly has an '{1}' type.": {
         "category": "Error",
         "code": 7005

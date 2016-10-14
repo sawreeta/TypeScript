@@ -20,7 +20,7 @@ namespace ts.server.typingsInstaller {
 
     function typingToFileName(cachePath: string, packageName: string, installTypingHost: InstallTypingHost): string {
         const result = resolveModuleName(packageName, combinePaths(cachePath, "index.d.ts"), { moduleResolution: ModuleResolutionKind.NodeJs }, installTypingHost);
-        return result.resolvedModule && result.resolvedModule.resolvedFileName;
+        return result.resolvedModule && resolvedPath(result.resolvedModule);
     }
 
     export enum PackageNameValidationResult {
@@ -35,7 +35,7 @@ namespace ts.server.typingsInstaller {
 
     export const MaxPackageNameLength = 214;
     /**
-     * Validates package name using rules defined at https://docs.npmjs.com/files/package.json 
+     * Validates package name using rules defined at https://docs.npmjs.com/files/package.json
      */
     export function validatePackageName(packageName: string): PackageNameValidationResult {
         Debug.assert(!!packageName, "Package name is not specified");
@@ -132,7 +132,7 @@ namespace ts.server.typingsInstaller {
                 this.log.writeLine(`Got install request ${JSON.stringify(req)}`);
             }
 
-            // load existing typing information from the cache 
+            // load existing typing information from the cache
             if (req.cachePath) {
                 if (this.log.isEnabled()) {
                     this.log.writeLine(`Request specifies cache path '${req.cachePath}', loading cached information...`);

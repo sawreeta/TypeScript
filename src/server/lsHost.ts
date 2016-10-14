@@ -22,35 +22,8 @@ namespace ts.server {
             }
 
             this.resolveModuleName = (moduleName, containingFile, compilerOptions, host) => {
-                const primaryResult = resolveModuleName(moduleName, containingFile, compilerOptions, host);
-                if (primaryResult.resolvedModule) {
-                    // return result immediately only if it is .ts, .tsx or .d.ts
-                    // otherwise try to load typings from @types
-                    if (primaryResult.resolvedModule.resolvedTsFileName) {
-                    //if (fileExtensionIsAny(primaryResult.resolvedModule.resolvedFileName, supportedTypeScriptExtensions)) {
-                        return primaryResult;
-                    }
-                }
-                // create different collection of failed lookup locations for second pass
-                // if it will fail and we've already found something during the first pass - we don't want to pollute its results
-                const secondaryLookupFailedLookupLocations: string[] = [];
-                const globalCache = this.project.projectService.typingsInstaller.globalTypingsCacheLocation;
-                if (this.project.getTypingOptions().enableAutoDiscovery && globalCache) {
-                    const traceEnabled = isTraceEnabled(compilerOptions, host);
-                    if (traceEnabled) {
-                        trace(host, Diagnostics.Auto_discovery_for_typings_is_enabled_in_project_0_Running_extra_resolution_pass_for_module_1_using_cache_location_2, this.project.getProjectName(), moduleName, globalCache);
-                    }
-                    //TODO: ModuleResolutionState should not be exposed
-                    const state: ModuleResolutionState = { compilerOptions, host, skipTsx: false, traceEnabled };
-                    const resolvedName = loadModuleFromNodeModules(moduleName, globalCache, secondaryLookupFailedLookupLocations, state, /*checkOneLevel*/ true);
-                    if (resolvedName) {
-                        return createResolvedModule(resolvedName, /*isExternalLibraryImport*/ true, primaryResult.failedLookupLocations.concat(secondaryLookupFailedLookupLocations));
-                    }
-                }
-                if (!primaryResult.resolvedModule && secondaryLookupFailedLookupLocations.length) {
-                    primaryResult.failedLookupLocations = primaryResult.failedLookupLocations.concat(secondaryLookupFailedLookupLocations);
-                }
-                return primaryResult;
+                const globalCache = this.project.getTypingOptions().enableAutoDiscovery ? this.project.projectService.typingsInstaller.globalTypingsCacheLocation : undefined;
+                return resolveModuleNameForLsHost(moduleName, containingFile, compilerOptions, host, globalCache, this.project.getProjectName())
             };
         }
 

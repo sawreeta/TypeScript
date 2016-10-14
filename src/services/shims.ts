@@ -328,7 +328,8 @@ namespace ts {
                     const resolutionsInFile = <MapLike<string>>JSON.parse(this.shimHost.getModuleResolutionsForFile(containingFile));
                     return map(moduleNames, name => {
                         const result = getProperty(resolutionsInFile, name);
-                        return result ? { resolvedFileName: result } : undefined;
+                        return result ? resolvedModuleFromAnyFile(result, /*isExternalLibraryImport*/ false) : undefined;
+                        //return result ? { resolvedFileName: result } : undefined;
                     });
                 };
             }
@@ -1056,26 +1057,30 @@ namespace ts {
             return forwardJSONCall(this.logger, actionDescription, action, this.logPerformance);
         }
 
+        //It's public, but no one uses it and it's not exported.
         public resolveModuleName(fileName: string, moduleName: string, compilerOptionsJson: string): string {
             return this.forwardJSONCall(`resolveModuleName('${fileName}')`, () => {
                 const compilerOptions = <CompilerOptions>JSON.parse(compilerOptionsJson);
                 const result = resolveModuleName(moduleName, normalizeSlashes(fileName), compilerOptions, this.host);
-                return {
-                    resolvedFileName: result.resolvedModule ? result.resolvedModule.resolvedFileName : undefined,
-                    failedLookupLocations: result.failedLookupLocations
-                };
+                //return {
+                //    resolvedFileName: result.resolvedModule ? result.resolvedModule.resolvedFileName : undefined,
+                //    failedLookupLocations: result.failedLookupLocations
+                //};
+                throw new Error("TODO");
             });
         }
 
+        //It's public, but no one uses it and it's not exported.
         public resolveTypeReferenceDirective(fileName: string, typeReferenceDirective: string, compilerOptionsJson: string): string {
             return this.forwardJSONCall(`resolveTypeReferenceDirective(${fileName})`, () => {
                 const compilerOptions = <CompilerOptions>JSON.parse(compilerOptionsJson);
                 const result = resolveTypeReferenceDirective(typeReferenceDirective, normalizeSlashes(fileName), compilerOptions, this.host);
-                return {
-                    resolvedFileName: result.resolvedTypeReferenceDirective ? result.resolvedTypeReferenceDirective.resolvedFileName : undefined,
-                    primary: result.resolvedTypeReferenceDirective ? result.resolvedTypeReferenceDirective.primary : true,
-                    failedLookupLocations: result.failedLookupLocations
-                };
+                //return {
+                //    resolvedFileName: result.resolvedTypeReferenceDirective ? result.resolvedTypeReferenceDirective.resolvedFileName : undefined,
+                //    primary: result.resolvedTypeReferenceDirective ? result.resolvedTypeReferenceDirective.primary : true,
+                //    failedLookupLocations: result.failedLookupLocations
+                //};
+                throw new Error("TODO");
             });
         }
 
