@@ -118,6 +118,17 @@ namespace ts {
         sourceFile.resolvedModules[moduleNameText] = resolvedModule;
     }
 
+    /** Gets the preferred path of a resolved module -- `ts` preferred over `js`. */
+    export function resolvedPath({ resolvedTsFileName, resolvedJsFileName }: ResolvedModule): string {
+        // If resolvedTsFileName is not set, resolvedJsFileName must be.
+        if (resolvedTsFileName) {
+            return resolvedTsFileName;
+        } else {
+            Debug.assert(!!resolvedJsFileName);
+            return resolvedJsFileName;
+        }
+    }
+
     export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective): void {
         if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
             sourceFile.resolvedTypeReferenceDirectiveNames = createMap<ResolvedTypeReferenceDirective>();
@@ -127,13 +138,13 @@ namespace ts {
     }
 
     /* @internal */
-    //review
+    /**
+     * Considers two ResolvedModules equal if they have the same `resolvedPath`.
+     * Thus `{ ts: foo, js: bar }` is equal to `{ ts: foo, js: baz }` because `ts` is preferred.
+     */
     export function moduleResolutionIsEqualTo(oldResolution: ResolvedModule, newResolution: ResolvedModule): boolean {
-        //NOTE: we consider { ts: foo, js: bar } equal to { ts: foo, js: undefined } ...
         return oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport &&
-            ((oldResolution.resolvedTsFileName || newResolution.resolvedTsFileName)
-                ? oldResolution.resolvedTsFileName === newResolution.resolvedTsFileName
-                : oldResolution.resolvedJsFileName === newResolution.resolvedJsFileName);
+            resolvedPath(oldResolution) === resolvedPath(newResolution);
     }
 
     /* @internal */

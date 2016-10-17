@@ -334,7 +334,6 @@ namespace ts {
             resolveModuleNamesWorker = (moduleNames, containingFile) => host.resolveModuleNames(moduleNames, containingFile);
         }
         else {
-            //TODO: this now returns results that compilerOptions wouldn't normally allow...
             const loader = (moduleName: string, containingFile: string) => resolveModuleName(moduleName, containingFile, options, host).resolvedModule;
             resolveModuleNamesWorker = (moduleNames, containingFile) => loadWithLocalCache(moduleNames, containingFile, loader);
         }
@@ -544,7 +543,6 @@ namespace ts {
                         const moduleNames = map(concatenate(newSourceFile.imports, newSourceFile.moduleAugmentations), getTextOfLiteral);
                         const resolutions = resolveModuleNamesWorker(moduleNames, newSourceFilePath);
                         // ensure that module resolution results are still correct
-                        debugger;
                         const resolutionsChanged = hasChangesInResolutions(moduleNames, resolutions, oldSourceFile.resolvedModules, moduleResolutionIsEqualTo);
                         if (resolutionsChanged) {
                             return false;
@@ -554,7 +552,6 @@ namespace ts {
                         const typesReferenceDirectives = map(newSourceFile.typeReferenceDirectives, x => x.fileName);
                         const resolutions = resolveTypeReferenceDirectiveNamesWorker(typesReferenceDirectives, newSourceFilePath);
                         // ensure that types resolutions are still correct
-                        debugger;
                         const resolutionsChanged = hasChangesInResolutions(typesReferenceDirectives, resolutions, oldSourceFile.resolvedTypeReferenceDirectiveNames, typeDirectiveIsEqualTo);
                         if (resolutionsChanged) {
                             return false;
@@ -681,7 +678,6 @@ namespace ts {
             return emitResult;
         }
 
-        //This is the one used by checker
         function getSourceFile(fileName: string): SourceFile {
             return getSourceFileByPath(toPath(fileName, currentDirectory, getCanonicalFileName));
         }
@@ -1358,7 +1354,7 @@ namespace ts {
                 file.resolvedModules = createMap<ResolvedModule>();
                 const moduleNames = map(concatenate(file.imports, file.moduleAugmentations), getTextOfLiteral);
                 const resolutions = resolveModuleNamesWorker(moduleNames, getNormalizedAbsolutePath(file.fileName, currentDirectory));
-                Debug.assert(resolutions.length === moduleNames.length);//valid?
+                Debug.assert(resolutions.length === moduleNames.length);
                 for (let i = 0; i < moduleNames.length; i++) {
                     const resolution = resolutions[i];
                     setResolvedModule(file, moduleNames[i], resolution);
@@ -1380,12 +1376,9 @@ namespace ts {
                         modulesWithElidedImports[file.path] = true;
                     }
                     else if (shouldAddFile) {
-                        findSourceFile(resolvedFileName,
-                                toPath(resolvedFileName, currentDirectory, getCanonicalFileName),
-                                /*isDefaultLib*/ false, /*isReference*/ false,
-                                file,
-                                skipTrivia(file.text, file.imports[i].pos),
-                                file.imports[i].end);
+                        const path = toPath(resolvedFileName, currentDirectory, getCanonicalFileName);
+                        const pos = skipTrivia(file.text, file.imports[i].pos);
+                        findSourceFile(resolvedFileName, path, /*isDefaultLib*/ false, /*isReference*/ false, file, pos, file.imports[i].end);
                     }
 
                     if (isFromNodeModulesSearch) {

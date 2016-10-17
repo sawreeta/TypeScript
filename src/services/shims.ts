@@ -325,11 +325,11 @@ namespace ts {
             // 'in' does not have this effect.
             if ("getModuleResolutionsForFile" in this.shimHost) {
                 this.resolveModuleNames = (moduleNames: string[], containingFile: string) => {
+                    //review -- see `this.getModuleResolutionsForFile =` in harnessLanguageService.ts... we are converting to string then bringing it back.
                     const resolutionsInFile = <MapLike<string>>JSON.parse(this.shimHost.getModuleResolutionsForFile(containingFile));
                     return map(moduleNames, name => {
                         const result = getProperty(resolutionsInFile, name);
                         return result ? resolvedModuleFromAnyFile(result, /*isExternalLibraryImport*/ false) : undefined;
-                        //return result ? { resolvedFileName: result } : undefined;
                     });
                 };
             }

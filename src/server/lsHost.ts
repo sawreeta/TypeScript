@@ -73,11 +73,7 @@ namespace ts.server {
 
                 const result = getResult(resolution);
                 if (result) {
-                    const resultFileName = getResultFileName(result);
-                    if (resultFileName &&  resultFileName === lastDeletedFileName) {
-                        return false;
-                    }
-                    return true;
+                    return getResultFileName(result) !== lastDeletedFileName;
                 }
 
                 // consider situation if we have no candidate locations as valid resolution.

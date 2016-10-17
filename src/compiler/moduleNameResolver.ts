@@ -2,7 +2,6 @@
 /// <reference path="diagnosticInformationMap.generated.ts" />
 
 namespace ts {
-    //was @internal
     function trace(host: ModuleResolutionHost, message: DiagnosticMessage, ...args: any[]): void;
     function trace(host: ModuleResolutionHost, message: DiagnosticMessage): void {
         host.trace(formatMessage.apply(undefined, arguments));
@@ -13,7 +12,18 @@ namespace ts {
         return compilerOptions.traceResolution && host.trace !== undefined;
     }
 
+    //name
+    interface Resolved {
+        resolvedTsFileName: string | undefined;
+        resolvedJsFileName: string | undefined;
+    }
+    //review
+    function resolvedTsOnly(resolved: Resolved | undefined): string | undefined {
+        return resolved && resolved.resolvedTsFileName;
+    }
+
     //neater
+    //kill and just use literals?
     function createResolved(resolvedTsFileName: string | undefined, resolvedJsFileName: string | undefined): Resolved {
         Debug.assert(!resolvedTsFileName || fileExtensionIsAny(resolvedTsFileName, supportedTypeScriptExtensions));
         Debug.assert(!resolvedJsFileName || fileExtensionIsAny(resolvedJsFileName, supportedJavascriptExtensions));
@@ -21,8 +31,6 @@ namespace ts {
         return { resolvedTsFileName, resolvedJsFileName }
     }
 
-    //was @internal
-    //this shouldn't be exported
     //name: createResolvedModule
     function createAResolvedModule(resolvedTsFileName: string, resolvedJsFileName: string, isExternalLibraryImport: boolean): ResolvedModule {
         return { resolvedTsFileName, resolvedJsFileName, isExternalLibraryImport }

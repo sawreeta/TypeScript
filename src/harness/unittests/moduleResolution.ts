@@ -1,6 +1,24 @@
 /// <reference path="..\harness.ts" />
 
 namespace ts {
+    export function checkResolvedModule(expected: ResolvedModule, actual: ResolvedModule): boolean {
+        if (!expected === !actual) {
+            if (expected) {
+                assert.isTrue(expected.resolvedTsFileName === actual.resolvedTsFileName, `'resolvedTsFileName': expected '${expected.resolvedTsFileName}' to be equal to '${actual.resolvedTsFileName}'`);
+                assert.isTrue(expected.resolvedJsFileName === actual.resolvedJsFileName, `'resolvedTsFileName': expected '${expected.resolvedJsFileName}' to be equal to '${actual.resolvedJsFileName}'`);
+                assert.isTrue(expected.isExternalLibraryImport === actual.isExternalLibraryImport, `'isExternalLibraryImport': expected '${expected.isExternalLibraryImport}' to be equal to '${actual.isExternalLibraryImport}'`);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    export function checkResolvedModuleWithFailedLookupLocations(actual: ResolvedModuleWithFailedLookupLocations, expectedResolvedModule: ResolvedModule, expectedFailedLookupLocations: string[]): void {
+        assert.isTrue(actual.resolvedModule !== undefined, "module should be resolved");
+        checkResolvedModule(actual.resolvedModule, expectedResolvedModule)
+        assert.deepEqual(actual.failedLookupLocations, expectedFailedLookupLocations);
+    }
+
     interface File {
         name: string;
         content?: string;
@@ -53,8 +71,6 @@ namespace ts {
                 const containingFile = { name: containingFileName };
                 const moduleFile = { name: moduleFileNameNoExt + ext };
                 const resolution = nodeModuleNameResolver(moduleName, containingFile.name, {}, createModuleResolutionHost(hasDirectoryExists, containingFile, moduleFile));
-                //assert.equal(resolution.resolvedModule.resolvedFileName, moduleFile.name);
-                //assert.equal(!!resolution.resolvedModule.isExternalLibraryImport, false);
                 checkResolvedModule(resolution.resolvedModule, createTsResolvedModule(moduleFile.name))
 
                 const failedLookupLocations: string[] = [];
@@ -98,11 +114,9 @@ namespace ts {
                 const packageJson = { name: packageJsonFileName, content: JSON.stringify({ "typings": fieldRef }) };
                 const moduleFile = { name: moduleFileName };
                 const resolution = nodeModuleNameResolver(moduleName, containingFile.name, {}, createModuleResolutionHost(hasDirectoryExists, containingFile, packageJson, moduleFile));
-                //assert.equal(resolution.resolvedModule.resolvedFileName, moduleFile.name);
-                //assert.equal(!!resolution.resolvedModule.isExternalLibraryImport, false);
                 checkResolvedModule(resolution.resolvedModule, createTsResolvedModule(moduleFile.name))
                 // expect three failed lookup location - attempt to load module as file with all supported extensions
-                assert.equal(resolution.failedLookupLocations.length, allSupportedExtensions.length);//supportedTypeScriptExtensions.length);
+                assert.equal(resolution.failedLookupLocations.length, allSupportedExtensions.length);
             }
         }
 
@@ -127,7 +141,6 @@ namespace ts {
 
                 const resolution = nodeModuleNameResolver("b", containingFile.name, {}, createModuleResolutionHost(hasDirectoryExists, containingFile, packageJson, moduleFile, indexFile));
 
-                //assert.equal(resolution.resolvedModule.resolvedFileName, indexPath);
                 checkResolvedModule(resolution.resolvedModule, createTsResolvedModule(indexPath, /*isExternalLibraryImport*/true));
             }
         }
@@ -162,13 +175,6 @@ namespace ts {
             }
         });
     });
-
-    //neater
-    function checkResolvedModuleWithFailedLookupLocations(actual: ResolvedModuleWithFailedLookupLocations, expectedResolvedModule: ResolvedModule, expectedFailedLookupLocations: string[]): void {
-        assert.isTrue(actual.resolvedModule !== undefined, "module should be resolved");
-        checkResolvedModule(actual.resolvedModule, expectedResolvedModule)
-        assert.deepEqual(actual.failedLookupLocations, expectedFailedLookupLocations);
-    }
 
     describe("Node module resolution - non-relative paths", () => {
         it("load module as file - ts files not loaded", () => {

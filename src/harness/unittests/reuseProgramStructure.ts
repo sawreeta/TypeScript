@@ -152,19 +152,6 @@ namespace ts {
         return program;
     }
 
-    //I made it exported -- so move?
-    export function checkResolvedModule(expected: ResolvedModule, actual: ResolvedModule): boolean {
-        if (!expected === !actual) {
-            if (expected) {
-                assert.isTrue(expected.resolvedTsFileName === actual.resolvedTsFileName, `'resolvedTsFileName': expected '${expected.resolvedTsFileName}' to be equal to '${actual.resolvedTsFileName}'`);
-                assert.isTrue(expected.resolvedJsFileName === actual.resolvedJsFileName, `'resolvedTsFileName': expected '${expected.resolvedJsFileName}' to be equal to '${actual.resolvedJsFileName}'`);
-                assert.isTrue(expected.isExternalLibraryImport === actual.isExternalLibraryImport, `'isExternalLibraryImport': expected '${expected.isExternalLibraryImport}' to be equal to '${actual.isExternalLibraryImport}'`);
-            }
-            return true;
-        }
-        return false;
-    }
-
     function checkResolvedTypeDirective(expected: ResolvedTypeReferenceDirective, actual: ResolvedTypeReferenceDirective): boolean {
         if (!expected === !actual) {
             if (expected) {
