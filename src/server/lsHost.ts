@@ -5,8 +5,8 @@
 namespace ts.server {
     export class LSHost implements ts.LanguageServiceHost, ModuleResolutionHost, ServerLanguageServiceHost {
         private compilationSettings: ts.CompilerOptions;
-        private readonly resolvedModuleNames: ts.FileMap<Map<ResolvedModuleWithFailedLookupLocations>>;
-        private readonly resolvedTypeReferenceDirectives: ts.FileMap<Map<ResolvedTypeReferenceDirectiveWithFailedLookupLocations>>;
+        private readonly resolvedModuleNames= createFileMap<Map<ResolvedModuleWithFailedLookupLocations>>();
+        private readonly resolvedTypeReferenceDirectives = createFileMap<Map<ResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
         private readonly getCanonicalFileName: (fileName: string) => string;
 
         private readonly resolveModuleName: typeof resolveModuleName;
@@ -14,22 +14,19 @@ namespace ts.server {
 
         constructor(private readonly host: ServerHost, private readonly project: Project, private readonly cancellationToken: HostCancellationToken) {
             this.getCanonicalFileName = ts.createGetCanonicalFileName(this.host.useCaseSensitiveFileNames);
-            this.resolvedModuleNames = createFileMap<Map<ResolvedModuleWithFailedLookupLocations>>(); //move construction to the property declaration
-            this.resolvedTypeReferenceDirectives = createFileMap<Map<ResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
 
             if (host.trace) {
                 this.trace = s => host.trace(s);
             }
 
             this.resolveModuleName = (moduleName, containingFile, compilerOptions, host) => {
-                const globalCache = this.project.getTypingOptions().enableAutoDiscovery ? this.project.projectService.typingsInstaller.globalTypingsCacheLocation : undefined;
+                const globalCache = this.project.getTypingOptions().enableAutoDiscovery
+                    ? this.project.projectService.typingsInstaller.globalTypingsCacheLocation
+                    : undefined;
                 return resolveModuleNameForLsHost(moduleName, containingFile, compilerOptions, host, globalCache, this.project.getProjectName())
             };
         }
 
-        //was: private resolveNamesWithLocalCache<T extends { failedLookupLocations: string[] }, R extends { resolvedFileName?: string }>(
-        //which took me hours to track down... `R extends { resolvedFileName?: string }` doesn't actually constrain R.
-        //This was added by https://github.com/Microsoft/TypeScript/commit/2671668d8637d8984b8f861e1234ab06e70730e8
         private resolveNamesWithLocalCache<T extends { failedLookupLocations: string[] }, R>(
             names: string[],
             containingFile: string,
@@ -44,7 +41,6 @@ namespace ts.server {
             const newResolutions: Map<T> = createMap<T>();
             const resolvedModules: R[] = [];
             const compilerOptions = this.getCompilationSettings();
-            //what if 2 files are deleted? This won't work in general...
             const lastDeletedFileName = this.project.projectService.lastDeletedFile && this.project.projectService.lastDeletedFile.fileName;
 
             for (const name of names) {

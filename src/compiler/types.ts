@@ -3281,12 +3281,19 @@ namespace ts {
         resolvedTsFileName: string | undefined;
         resolvedJsFileName: string | undefined;
     }
+    //move
     export function resolvedTsOnly(resolved: Resolved | undefined): string | undefined {
         return resolved && resolved.resolvedTsFileName;
     }
     //move
     export function resolvedPath({ resolvedTsFileName, resolvedJsFileName }: ResolvedModule): string {
-        return resolvedTsFileName || resolvedJsFileName;
+        // If resolvedTsFileName is not set, resolvedJsFileName must be.
+        if (resolvedTsFileName) {
+            return resolvedTsFileName;
+        } else {
+            Debug.assert(!!resolvedJsFileName);
+            return resolvedJsFileName;
+        }
     }
 
     //changing this is a breaking change! host would have to change!

@@ -1345,29 +1345,6 @@ namespace ts {
             return resolveExternalModule(location, moduleReferenceLiteral.text, moduleNotFoundError, moduleReferenceLiteral);
         }
 
-        //This should maybe be done in program.ts, not in checker.
-        //SO: now doing this in processImportedModules
-        /*function floof({resolvedTsFileName, resolvedJsFileName}: ResolvedModule): string | undefined {
-            if (resolvedTsFileName) {
-                return (fileExtensionIs(resolvedTsFileName, '.tsx') && !compilerOptions.jsx) ? undefined : resolvedTsFileName;
-            }
-            else {
-                if (!compilerOptions.allowJs) {
-                    return undefined;
-                }
-                else {
-                    //nodeModulesMaxDepth already handled by now?
-                    return resolvedJsFileName;
-                }
-            }
-        }*/
-
-        //name
-        function goof(resolvedModule: ResolvedModule): SourceFile | undefined {
-            const f = resolvedPath(resolvedModule);
-            return f && host.getSourceFile(f);
-        }
-
         function resolveExternalModule(location: Node, moduleReference: string, moduleNotFoundError: DiagnosticMessage, errorNode: Node): Symbol {
             // Module names are escaped in our symbol table.  However, string literal values aren't.
             // Escape the name in the "require(...)" clause to ensure we find the right symbol.
@@ -1387,7 +1364,7 @@ namespace ts {
             }
 
             const resolvedModule = getResolvedModule(getSourceFileOfNode(location), moduleReference);
-            const sourceFile = resolvedModule && goof(resolvedModule);
+            const sourceFile = resolvedModule && host.getSourceFile(resolvedPath(resolvedModule));
             if (sourceFile) {
                 if (sourceFile.symbol) {
                     // merged symbol is module declaration symbol combined with all augmentations
