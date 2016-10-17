@@ -1391,8 +1391,6 @@ namespace ts {
                     const diag = Diagnostics.An_import_path_cannot_end_with_a_0_extension_Consider_importing_1_instead;
                     error(errorNode, diag, tsExtension, removeExtension(moduleName, tsExtension));
                 }
-                //TODO: also have error if the resolved module has a tsx or js extension
-                //Recommend --tsx or --allowJs flag
                 else {
                     error(errorNode, moduleNotFoundError, moduleName);
                 }

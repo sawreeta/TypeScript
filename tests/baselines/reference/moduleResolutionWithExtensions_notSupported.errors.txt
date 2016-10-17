@@ -1,0 +1,29 @@
+error TS6141: Module was resolved to '/tsx.tsx', but '--jsx' is not set.
+error TS6142: Module was resolved to '/js.js', but '--allowJs' is not set.
+error TS6142: Module was resolved to '/jsx.jsx', but '--allowJs' is not set.
+/a.ts(1,17): error TS2307: Cannot find module './tsx'.
+/a.ts(2,17): error TS2307: Cannot find module './jsx'.
+/a.ts(3,16): error TS2307: Cannot find module './js'.
+
+
+!!! error TS6141: Module was resolved to '/tsx.tsx', but '--jsx' is not set.
+!!! error TS6142: Module was resolved to '/js.js', but '--allowJs' is not set.
+!!! error TS6142: Module was resolved to '/jsx.jsx', but '--allowJs' is not set.
+==== /a.ts (3 errors) ====
+    import tsx from "./tsx";
+                    ~~~~~~~
+!!! error TS2307: Cannot find module './tsx'.
+    import jsx from "./jsx";
+                    ~~~~~~~
+!!! error TS2307: Cannot find module './jsx'.
+    import js from "./js";
+                   ~~~~~~
+!!! error TS2307: Cannot find module './js'.
+    
+==== /tsx.tsx (0 errors) ====
+    
+    
+==== /jsx.jsx (0 errors) ====
+    
+==== /js.js (0 errors) ====
+    

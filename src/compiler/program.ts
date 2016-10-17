@@ -1307,33 +1307,29 @@ namespace ts {
         }
 
         interface ResolutionInfo {
+            /** Whether the resolution came from searching node_modules. */
             isFromNodeModulesSearch: boolean;
+            /** isFromNodeModulesSearch && it's resolved to a js file */
             isJsFileFromNodeModules: boolean;
+            /** This may have any extension. */
             resolvedFileName: string | undefined;
         }
-        //TODO
-        function foo(resolution: ResolvedModule | undefined): ResolutionInfo {
-            // add file to program only if:
-            // - resolution was successful
-            // - noResolve is falsy
-            // - module name comes from the list of imports
-            // - it's not a top level JavaScript module that exceeded the search max
-            //const isFromNodeModulesSearch = resolution && resolution.isExternalLibraryImport;
-            //const isJsFileFromNodeModules = isFromNodeModulesSearch && hasJavaScriptFileExtension(resolvedFileName);
-
+        /**
+         * Given a ResolvedModule, include it only if we support its extension, else add error messages.
+         */
+        function getResolutionInfo(resolution: ResolvedModule | undefined): ResolutionInfo {
             if (!resolution) {
                 return { isFromNodeModulesSearch: false, isJsFileFromNodeModules: false, resolvedFileName: undefined }
             }
 
             const isFromNodeModulesSearch = resolution.isExternalLibraryImport;
-            //neater
-            const nada: ResolutionInfo = { isFromNodeModulesSearch, isJsFileFromNodeModules: false, resolvedFileName: undefined }
+            const noResult: ResolutionInfo = { isFromNodeModulesSearch, isJsFileFromNodeModules: false, resolvedFileName: undefined }
 
             const ts = resolution.resolvedTsFileName;
             if (ts) {
                 if (!options.jsx && fileExtensionIs(ts, '.tsx')) {
-                   programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_jsx_is_not_set, ts));
-                    return nada;
+                    programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_jsx_is_not_set, ts));
+                    return noResult;
                 }
                 else {
                     return { isFromNodeModulesSearch, isJsFileFromNodeModules: false, resolvedFileName: ts };
@@ -1341,14 +1337,14 @@ namespace ts {
             }
             else {
                 const js = resolution.resolvedJsFileName;
-                Debug.assert(!!js); //else the resolution should be undefined
+                Debug.assert(!!js);
                 if (!options.allowJs) {
-                    programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_allowJs_is_not_set, ts));
-                    return nada;
+                    programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_allowJs_is_not_set, js));
+                    return noResult;
                 }
                 else if (!options.jsx && fileExtensionIs(js, '.jsx')) {
                     programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Module_was_resolved_to_0_but_jsx_is_not_set, js));
-                    return nada;
+                    return noResult;
                 }
                 else {
                     return { isFromNodeModulesSearch, isJsFileFromNodeModules: isFromNodeModulesSearch, resolvedFileName: js };
@@ -1366,13 +1362,17 @@ namespace ts {
                 for (let i = 0; i < moduleNames.length; i++) {
                     const resolution = resolutions[i];
                     setResolvedModule(file, moduleNames[i], resolution);
-                    const { isFromNodeModulesSearch, isJsFileFromNodeModules, resolvedFileName } = foo(resolution);
+                    const { isFromNodeModulesSearch, isJsFileFromNodeModules, resolvedFileName } = getResolutionInfo(resolution);
 
                     if (isFromNodeModulesSearch) {
                         currentNodeModulesDepth++;
                     }
 
-                    //a JS file will be elided if it is untyped.
+                    // add file to program only if:
+                    // - resolution was successful
+                    // - noResolve is falsy
+                    // - module name comes from the list of imports
+                    // - it's not a top level JavaScript module that exceeded the search max
                     const elideImport = isJsFileFromNodeModules && currentNodeModulesDepth > maxNodeModuleJsDepth;
                     const shouldAddFile = resolvedFileName && !options.noResolve && i < file.imports.length && !elideImport;
 

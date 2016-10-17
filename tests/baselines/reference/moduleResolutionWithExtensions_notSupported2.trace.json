@@ -1,0 +1,12 @@
+[
+    "======== Resolving module './jsx' from 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/a.ts'. ========",
+    "Module resolution kind is not specified, using 'NodeJs'.",
+    "Loading module as file / folder, candidate module location 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx'.",
+    "File 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx.ts' does not exist.",
+    "File 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx.tsx' does not exist.",
+    "File 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx.d.ts' does not exist.",
+    "File 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx.js' does not exist.",
+    "File 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx.jsx' exist - use it as a name resolution result.",
+    "Resolving real path for 'C:/Users/anhans/work/TypeScript/tests/cases/compiler/jsx.jsx', result 'c:/users/anhans/work/typescript/tests/cases/compiler/jsx.jsx'",
+    "======== Module name './jsx' was successfully resolved to 'c:/users/anhans/work/typescript/tests/cases/compiler/jsx.jsx'. ========"
+]

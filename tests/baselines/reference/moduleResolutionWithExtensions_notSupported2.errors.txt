@@ -1,0 +1,14 @@
+error TS6141: Module was resolved to 'c:/users/anhans/work/typescript/tests/cases/compiler/jsx.jsx', but '--jsx' is not set.
+tests/cases/compiler/a.ts(1,17): error TS2307: Cannot find module './jsx'.
+
+
+!!! error TS6141: Module was resolved to 'c:/users/anhans/work/typescript/tests/cases/compiler/jsx.jsx', but '--jsx' is not set.
+==== tests/cases/compiler/a.ts (1 errors) ====
+    import jsx from "./jsx";
+                    ~~~~~~~
+!!! error TS2307: Cannot find module './jsx'.
+    
+==== tests/cases/compiler/jsx.jsx (0 errors) ====
+    // Test the error message if we have `--allowJs` but not `--jsx`.
+    
+    
