@@ -1,5 +1,4 @@
 //// [unusedLocalsAndParameters.ts]
-
 export { };
 
 // function declaration paramter
@@ -82,10 +81,14 @@ namespace N {
     var x;
 }
 
-    
+for (let x: y) {
+    z(x);
+}
+
 
 //// [unusedLocalsAndParameters.js]
 "use strict";
+exports.__esModule = true;
 // function declaration paramter
 function f(a) {
 }
@@ -97,7 +100,7 @@ fexp(0);
 // arrow function paramter
 var farrow = function (a) {
 };
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     // Method declaration paramter
@@ -107,12 +110,12 @@ var C = (function () {
         // Accessor declaration paramter
         set: function (v) {
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;
 }());
-var E = (function () {
+var E = /** @class */ (function () {
     function class_1() {
     }
     // Method declaration paramter
@@ -122,7 +125,7 @@ var E = (function () {
         // Accessor declaration paramter
         set: function (v) {
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return class_1;
@@ -166,3 +169,5 @@ var N;
 (function (N) {
     var x;
 })(N || (N = {}));
+for (var x = void 0, z = (void 0).z; (x); )
+    ;

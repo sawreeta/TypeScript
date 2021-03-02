@@ -1,5 +1,4 @@
 === tests/cases/compiler/modularizeLibrary_NoErrorDuplicateLibOptions1.ts ===
-
 // Using Es6 array
 function f(x: number, y: number, z: number) {
 >f : (x: number, y: number, z: number) => any[]
@@ -9,9 +8,9 @@ function f(x: number, y: number, z: number) {
 
     return Array.from(arguments);
 >Array.from(arguments) : any[]
->Array.from : { <T, U>(iterable: Iterable<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; <T>(iterable: Iterable<T>): T[]; <T, U>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; <T>(arrayLike: ArrayLike<T>): T[]; }
+>Array.from : { <T>(arrayLike: ArrayLike<T>): T[]; <T, U>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; <T>(iterable: Iterable<T> | ArrayLike<T>): T[]; <T, U>(iterable: Iterable<T> | ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; }
 >Array : ArrayConstructor
->from : { <T, U>(iterable: Iterable<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; <T>(iterable: Iterable<T>): T[]; <T, U>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; <T>(arrayLike: ArrayLike<T>): T[]; }
+>from : { <T>(arrayLike: ArrayLike<T>): T[]; <T, U>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; <T>(iterable: Iterable<T> | ArrayLike<T>): T[]; <T, U>(iterable: Iterable<T> | ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[]; }
 >arguments : IArguments
 }
 
@@ -52,7 +51,7 @@ Baz.name;
 
 // Using ES6 generator
 function* gen() {
->gen : () => IterableIterator<number>
+>gen : () => Generator<number, void, unknown>
 
     let i = 0;
 >i : number
@@ -74,7 +73,7 @@ function* gen() {
 }
 
 function* gen2() {
->gen2 : () => IterableIterator<number>
+>gen2 : () => Generator<number, void, unknown>
 
     let i = 0;
 >i : number
@@ -113,9 +112,10 @@ var o = {
 >2 : 2
 
     [Symbol.hasInstance](value: any) {
->Symbol.hasInstance : symbol
+>[Symbol.hasInstance] : (value: any) => boolean
+>Symbol.hasInstance : unique symbol
 >Symbol : SymbolConstructor
->hasInstance : symbol
+>hasInstance : unique symbol
 >value : any
 
         return false;
@@ -124,22 +124,22 @@ var o = {
 };
 o.hasOwnProperty(Symbol.hasInstance);
 >o.hasOwnProperty(Symbol.hasInstance) : boolean
->o.hasOwnProperty : { (v: PropertyKey): boolean; (v: string): boolean; }
+>o.hasOwnProperty : (v: PropertyKey) => boolean
 >o : { a: number; [Symbol.hasInstance](value: any): boolean; }
->hasOwnProperty : { (v: PropertyKey): boolean; (v: string): boolean; }
->Symbol.hasInstance : symbol
+>hasOwnProperty : (v: PropertyKey) => boolean
+>Symbol.hasInstance : unique symbol
 >Symbol : SymbolConstructor
->hasInstance : symbol
+>hasInstance : unique symbol
 
 // Using ES6 promise
 async function out() {
->out : () => Promise<{}>
+>out : () => Promise<unknown>
 
     return new Promise(function (resolve, reject) {});
->new Promise(function (resolve, reject) {}) : Promise<{}>
+>new Promise(function (resolve, reject) {}) : Promise<unknown>
 >Promise : PromiseConstructor
->function (resolve, reject) {} : (resolve: (value?: {} | PromiseLike<{}>) => void, reject: (reason?: any) => void) => void
->resolve : (value?: {} | PromiseLike<{}>) => void
+>function (resolve, reject) {} : (resolve: (value: unknown) => void, reject: (reason?: any) => void) => void
+>resolve : (value: unknown) => void
 >reject : (reason?: any) => void
 }
 
@@ -148,10 +148,10 @@ declare var console: any;
 
 out().then(() => {
 >out().then(() => {    console.log("Yea!");}) : Promise<void>
->out().then : { (onfulfilled?: (value: {}) => {} | PromiseLike<{}>, onrejected?: (reason: any) => {} | PromiseLike<{}>): Promise<{}>; <TResult>(onfulfilled: (value: {}) => {} | PromiseLike<{}>, onrejected: (reason: any) => TResult | PromiseLike<TResult>): Promise<{} | TResult>; <TResult>(onfulfilled: (value: {}) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<TResult>; <TResult1, TResult2>(onfulfilled: (value: {}) => TResult1 | PromiseLike<TResult1>, onrejected: (reason: any) => TResult2 | PromiseLike<TResult2>): Promise<TResult1 | TResult2>; }
->out() : Promise<{}>
->out : () => Promise<{}>
->then : { (onfulfilled?: (value: {}) => {} | PromiseLike<{}>, onrejected?: (reason: any) => {} | PromiseLike<{}>): Promise<{}>; <TResult>(onfulfilled: (value: {}) => {} | PromiseLike<{}>, onrejected: (reason: any) => TResult | PromiseLike<TResult>): Promise<{} | TResult>; <TResult>(onfulfilled: (value: {}) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<TResult>; <TResult1, TResult2>(onfulfilled: (value: {}) => TResult1 | PromiseLike<TResult1>, onrejected: (reason: any) => TResult2 | PromiseLike<TResult2>): Promise<TResult1 | TResult2>; }
+>out().then : <TResult1 = unknown, TResult2 = never>(onfulfilled?: (value: unknown) => TResult1 | PromiseLike<TResult1>, onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>) => Promise<TResult1 | TResult2>
+>out() : Promise<unknown>
+>out : () => Promise<unknown>
+>then : <TResult1 = unknown, TResult2 = never>(onfulfilled?: (value: unknown) => TResult1 | PromiseLike<TResult1>, onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>) => Promise<TResult1 | TResult2>
 >() => {    console.log("Yea!");} : () => void
 
     console.log("Yea!");
@@ -178,9 +178,9 @@ var p = new Proxy(t, {});
 // Using ES6 reflect
 Reflect.isExtensible({});
 >Reflect.isExtensible({}) : boolean
->Reflect.isExtensible : (target: any) => boolean
+>Reflect.isExtensible : (target: object) => boolean
 >Reflect : typeof Reflect
->isExtensible : (target: any) => boolean
+>isExtensible : (target: object) => boolean
 >{} : {}
 
 // Using Es6 regexp
@@ -220,9 +220,10 @@ const o1 = {
 >{    [Symbol.hasInstance](value: any) {        return false;    }} : { [Symbol.hasInstance](value: any): boolean; }
 
     [Symbol.hasInstance](value: any) {
->Symbol.hasInstance : symbol
+>[Symbol.hasInstance] : (value: any) => boolean
+>Symbol.hasInstance : unique symbol
 >Symbol : SymbolConstructor
->hasInstance : symbol
+>hasInstance : unique symbol
 >value : any
 
         return false;

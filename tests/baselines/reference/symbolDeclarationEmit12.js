@@ -16,7 +16,7 @@ module M {
 var M;
 (function (M) {
     class C {
-        [Symbol.toPrimitive](x) { }
+        [(Symbol.iterator, Symbol.toPrimitive)](x) { }
         [Symbol.isConcatSpreadable]() {
             return undefined;
         }
@@ -25,3 +25,18 @@ var M;
     }
     M.C = C;
 })(M || (M = {}));
+
+
+//// [symbolDeclarationEmit12.d.ts]
+declare module M {
+    interface I {
+    }
+    export class C {
+        [Symbol.iterator]: I;
+        [Symbol.toPrimitive](x: I): void;
+        [Symbol.isConcatSpreadable](): I;
+        get [Symbol.toPrimitive](): any;
+        set [Symbol.toPrimitive](x: I);
+    }
+    export {};
+}

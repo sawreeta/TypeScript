@@ -1,5 +1,4 @@
 //// [unusedPrivateMembers.ts]
-
 class Test1 {
     private initializeInternal() {
     }
@@ -48,9 +47,25 @@ class Test5<T> {
     }
 }
 
+class Test6 {
+    private get a() {
+        return 0;
+    }
+    private set a(v) {
+        v;
+    }
+    private b = 0;
+
+    public test() {
+        var x = new Test6();
+        x.a++;
+        x.b++;
+    }
+}
+
 
 //// [unusedPrivateMembers.js]
-var Test1 = (function () {
+var Test1 = /** @class */ (function () {
     function Test1() {
     }
     Test1.prototype.initializeInternal = function () {
@@ -61,7 +76,7 @@ var Test1 = (function () {
     };
     return Test1;
 }());
-var Test2 = (function () {
+var Test2 = /** @class */ (function () {
     function Test2() {
         this.p = 0;
     }
@@ -71,14 +86,14 @@ var Test2 = (function () {
     };
     return Test2;
 }());
-var Test3 = (function () {
+var Test3 = /** @class */ (function () {
     function Test3() {
     }
     Object.defineProperty(Test3.prototype, "x", {
         get: function () {
             return 0;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Test3.prototype.test = function () {
@@ -87,14 +102,14 @@ var Test3 = (function () {
     };
     return Test3;
 }());
-var Test4 = (function () {
+var Test4 = /** @class */ (function () {
     function Test4() {
     }
     Object.defineProperty(Test4.prototype, "x", {
         set: function (v) {
             v;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Test4.prototype.test = function () {
@@ -103,7 +118,7 @@ var Test4 = (function () {
     };
     return Test4;
 }());
-var Test5 = (function () {
+var Test5 = /** @class */ (function () {
     function Test5() {
     }
     Test5.prototype.test = function () {
@@ -111,4 +126,25 @@ var Test5 = (function () {
         x.p;
     };
     return Test5;
+}());
+var Test6 = /** @class */ (function () {
+    function Test6() {
+        this.b = 0;
+    }
+    Object.defineProperty(Test6.prototype, "a", {
+        get: function () {
+            return 0;
+        },
+        set: function (v) {
+            v;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Test6.prototype.test = function () {
+        var x = new Test6();
+        x.a++;
+        x.b++;
+    };
+    return Test6;
 }());

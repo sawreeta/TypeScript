@@ -105,7 +105,8 @@ function objectLiteral2() {
 }
 function objectLiteral3() {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, _b;
+        var _a;
+        var _b;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
@@ -145,8 +146,8 @@ function objectLiteral5() {
             switch (_b.label) {
                 case 0:
                     _a = {
-                            a: y
-                        };
+                        a: y
+                    };
                     return [4 /*yield*/, b];
                 case 1:
                     x = (_a[_b.sent()] = z,
@@ -158,13 +159,14 @@ function objectLiteral5() {
 }
 function objectLiteral6() {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, _b;
+        var _a;
+        var _b;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     _b = {
-                            a: y
-                        };
+                        a: y
+                    };
                     _a = b;
                     return [4 /*yield*/, z];
                 case 1:

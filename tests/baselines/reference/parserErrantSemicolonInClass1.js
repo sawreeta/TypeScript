@@ -36,7 +36,7 @@ class a {
 
 
 //// [parserErrantSemicolonInClass1.js]
-var a = (function () {
+var a = /** @class */ (function () {
     function a(ns) {
     }
     a.prototype.pgF = function () { };
@@ -47,14 +47,14 @@ var a = (function () {
         },
         set: function () {
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(a, "p2", {
         get: function () {
             return { x: 30, y: 40 };
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     a.d2 = function () {
@@ -63,7 +63,7 @@ var a = (function () {
         get: function () {
             return "string";
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     a.prototype.foo = function (ns) {

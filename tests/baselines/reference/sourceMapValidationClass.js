@@ -19,7 +19,7 @@ class Greeter {
 }
 
 //// [sourceMapValidationClass.js]
-var Greeter = (function () {
+var Greeter = /** @class */ (function () {
     function Greeter(greeting) {
         var b = [];
         for (var _i = 1; _i < arguments.length; _i++) {
@@ -41,7 +41,7 @@ var Greeter = (function () {
         set: function (greetings) {
             this.greeting = greetings;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Greeter;

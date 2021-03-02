@@ -5,13 +5,12 @@
 ////     interface Element { }
 ////     interface IntrinsicElements {
 ////         div: {
-////             [|name|]?: string;
+////             [|[|{| "contextRangeIndex": 0 |}name|]?: string;|]
 ////             isOpen?: boolean;
 ////         };
 ////         span: { n: string; };
 ////     }
 //// }
-//// var x = <div [|na/**/me|]="hello" />;
+//// var x = <div [|[|{| "contextRangeIndex": 2 |}name|]="hello"|] />;
 
-goTo.marker();
-verify.renameLocations(false, false);
+verify.rangesWithSameTextAreRenameLocations("name");

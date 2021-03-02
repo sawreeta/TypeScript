@@ -1,9 +1,4 @@
 === tests/cases/conformance/es6/for-ofStatements/for-of28.ts ===
-for (var v of new StringIterator) { }
->v : any
->new StringIterator : StringIterator
->StringIterator : typeof StringIterator
-
 class StringIterator {
 >StringIterator : StringIterator
 
@@ -11,11 +6,18 @@ class StringIterator {
 >next : any
 
     [Symbol.iterator]() {
->Symbol.iterator : symbol
+>[Symbol.iterator] : () => this
+>Symbol.iterator : unique symbol
 >Symbol : SymbolConstructor
->iterator : symbol
+>iterator : unique symbol
 
         return this;
 >this : this
     }
 }
+
+for (var v of new StringIterator) { }
+>v : any
+>new StringIterator : StringIterator
+>StringIterator : typeof StringIterator
+

@@ -6,13 +6,13 @@ class Foo {
 
 
 //// [staticGetterAndSetter.js]
-var Foo = (function () {
+var Foo = /** @class */ (function () {
     function Foo() {
     }
     Object.defineProperty(Foo, "Foo", {
         get: function () { return 0; },
         set: function (n) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Foo;

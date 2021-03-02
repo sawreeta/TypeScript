@@ -1,8 +1,8 @@
 /// <reference path="fourslash.ts" />
 
 ////class C {
-////    [|constructor|](n: number);
-////    [|constructor|](){}
+////    [|[|{| "contextRangeIndex": 0, "isDefinition": true |}constructor|](n: number);|]
+////    [|[|{| "contextRangeIndex": 2, "isDefinition": true |}constructor|](){}|]
 ////}
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("class C", "constructor");

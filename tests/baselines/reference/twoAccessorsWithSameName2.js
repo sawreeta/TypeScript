@@ -17,27 +17,27 @@ class E {
 }
 
 //// [twoAccessorsWithSameName2.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C, "x", {
         get: function () { return 1; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;
 }());
-var D = (function () {
+var D = /** @class */ (function () {
     function D() {
     }
     Object.defineProperty(D, "x", {
         set: function (v) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return D;
 }());
-var E = (function () {
+var E = /** @class */ (function () {
     function E() {
     }
     Object.defineProperty(E, "x", {
@@ -45,7 +45,7 @@ var E = (function () {
             return 1;
         },
         set: function (v) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return E;

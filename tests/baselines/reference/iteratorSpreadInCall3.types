@@ -1,11 +1,4 @@
 === tests/cases/conformance/es6/spread/iteratorSpreadInCall3.ts ===
-foo(...new SymbolIterator);
->foo(...new SymbolIterator) : void
->foo : (...s: symbol[]) => void
->...new SymbolIterator : symbol
->new SymbolIterator : SymbolIterator
->SymbolIterator : typeof SymbolIterator
-
 function foo(...s: symbol[]) { }
 >foo : (...s: symbol[]) => void
 >s : symbol[]
@@ -32,11 +25,20 @@ class SymbolIterator {
     }
 
     [Symbol.iterator]() {
->Symbol.iterator : symbol
+>[Symbol.iterator] : () => this
+>Symbol.iterator : unique symbol
 >Symbol : SymbolConstructor
->iterator : symbol
+>iterator : unique symbol
 
         return this;
 >this : this
     }
 }
+
+foo(...new SymbolIterator);
+>foo(...new SymbolIterator) : void
+>foo : (...s: symbol[]) => void
+>...new SymbolIterator : symbol
+>new SymbolIterator : SymbolIterator
+>SymbolIterator : typeof SymbolIterator
+

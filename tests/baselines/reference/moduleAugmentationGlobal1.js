@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/moduleAugmentationGlobal1.ts] ////
 
 //// [f1.ts]
-
 export class A {x: number;}
 
 //// [f2.ts]
@@ -20,7 +19,9 @@ let y = x.getA().x;
 
 //// [f1.js]
 "use strict";
-var A = (function () {
+exports.__esModule = true;
+exports.A = void 0;
+var A = /** @class */ (function () {
     function A() {
     }
     return A;
@@ -28,6 +29,7 @@ var A = (function () {
 exports.A = A;
 //// [f2.js]
 "use strict";
+exports.__esModule = true;
 var x = [1];
 var y = x.getA().x;
 
@@ -38,7 +40,7 @@ export declare class A {
 }
 //// [f2.d.ts]
 import { A } from "./f1";
-declare global  {
+declare global {
     interface Array<T> {
         getA(): A;
     }

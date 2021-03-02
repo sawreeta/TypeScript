@@ -12,11 +12,13 @@ export var x: b.c = new b.c();
 //// [internalAliasInitializedModuleInsideTopLevelModuleWithoutExport.js]
 define(["require", "exports"], function (require, exports) {
     "use strict";
+    exports.__esModule = true;
+    exports.x = exports.a = void 0;
     var a;
     (function (a) {
         var b;
         (function (b) {
-            var c = (function () {
+            var c = /** @class */ (function () {
                 function c() {
                 }
                 return c;

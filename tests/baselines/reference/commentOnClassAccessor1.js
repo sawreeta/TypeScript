@@ -7,7 +7,7 @@ class C {
 }
 
 //// [commentOnClassAccessor1.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "bar", {
@@ -15,7 +15,7 @@ var C = (function () {
          * @type {number}
          */
         get: function () { return 1; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

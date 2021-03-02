@@ -6,18 +6,18 @@ class C {
 }
 
 //// [computedPropertyNamesDeclarationEmit2_ES5.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C["" + ""] = function () { };
     Object.defineProperty(C, "" + "", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "" + "", {
         set: function (x) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

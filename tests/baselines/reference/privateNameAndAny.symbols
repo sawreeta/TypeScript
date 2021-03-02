@@ -1,0 +1,48 @@
+=== tests/cases/conformance/classes/members/privateNames/privateNameAndAny.ts ===
+class A {
+>A : Symbol(A, Decl(privateNameAndAny.ts, 0, 0))
+
+    #foo = true; 
+>#foo : Symbol(A.#foo, Decl(privateNameAndAny.ts, 0, 9))
+
+    method(thing: any) {
+>method : Symbol(A.method, Decl(privateNameAndAny.ts, 1, 16))
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 2, 11))
+
+        thing.#foo; // OK
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 2, 11))
+
+        thing.#bar; // Error
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 2, 11))
+
+        thing.#foo();
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 2, 11))
+    }
+    methodU(thing: unknown) {
+>methodU : Symbol(A.methodU, Decl(privateNameAndAny.ts, 6, 5))
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 7, 12))
+
+        thing.#foo;
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 7, 12))
+
+        thing.#bar;
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 7, 12))
+
+        thing.#foo();
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 7, 12))
+    }
+    methodN(thing: never) {
+>methodN : Symbol(A.methodN, Decl(privateNameAndAny.ts, 11, 5))
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 12, 12))
+
+        thing.#foo;
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 12, 12))
+
+        thing.#bar;
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 12, 12))
+
+        thing.#foo();
+>thing : Symbol(thing, Decl(privateNameAndAny.ts, 12, 12))
+    }
+};
+

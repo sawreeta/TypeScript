@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/declarationEmitExportDeclaration.ts] ////
 
 //// [utils.ts]
-
 export function foo() { }
 export function bar() { }
 export interface Buzz { }
@@ -15,14 +14,18 @@ export {bar};
 
 //// [utils.js]
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.bar = exports.foo = void 0;
 function foo() { }
 exports.foo = foo;
 function bar() { }
 exports.bar = bar;
 //// [index.js]
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.bar = void 0;
 var utils_1 = require("./utils");
-exports.bar = utils_1.bar;
+Object.defineProperty(exports, "bar", { enumerable: true, get: function () { return utils_1.bar; } });
 utils_1.foo();
 var obj;
 

@@ -23,8 +23,31 @@ enum E10 {
 
 // Enum with computed member intializer of other types
 enum E11 {
+    A = true,
+    B = new Date(),
+    C = window,
+    D = {},
+    E = (() => 'foo')(),
+}
+
+// Enum with string valued member and computed member initializers
+enum E12 {
     A = '',
     B = new Date(),
     C = window,
-    D = {}
+    D = {},
+    E = 1 + 1,
+    F = (() => 'foo')(),
 }
+
+// Enum with incorrect syntax
+enum E13 {
+    postComma,
+    postValueComma = 1,
+
+    postSemicolon;
+    postColonValueComma: 2,
+    postColonValueSemicolon: 3;
+};
+
+enum E14 { a, b: any "hello" += 1, c, d}

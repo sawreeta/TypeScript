@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/es6ImportEqualsDeclaration2.ts] ////
 
 //// [server.d.ts]
-
 declare module "other" {
     export class C { }
 }
@@ -21,3 +20,4 @@ import {a} from "server";
 
 
 //// [client.js]
+export {};

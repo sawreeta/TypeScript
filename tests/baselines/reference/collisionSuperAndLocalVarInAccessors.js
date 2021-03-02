@@ -33,13 +33,23 @@ class c extends Foo {
 }
 
 //// [collisionSuperAndLocalVarInAccessors.js]
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var _super = 10; // No Error
-var Foo = (function () {
+var Foo = /** @class */ (function () {
     function Foo() {
     }
     Object.defineProperty(Foo.prototype, "prop1", {
@@ -50,15 +60,15 @@ var Foo = (function () {
         set: function (val) {
             var _super = 10; // No error
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Foo;
 }());
-var b = (function (_super) {
-    __extends(b, _super);
+var b = /** @class */ (function (_super_1) {
+    __extends(b, _super_1);
     function b() {
-        return _super.apply(this, arguments) || this;
+        return _super_1 !== null && _super_1.apply(this, arguments) || this;
     }
     Object.defineProperty(b.prototype, "prop2", {
         get: function () {
@@ -68,15 +78,15 @@ var b = (function (_super) {
         set: function (val) {
             var _super = 10; // Should be error
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return b;
 }(Foo));
-var c = (function (_super) {
-    __extends(c, _super);
+var c = /** @class */ (function (_super_1) {
+    __extends(c, _super_1);
     function c() {
-        return _super.apply(this, arguments) || this;
+        return _super_1 !== null && _super_1.apply(this, arguments) || this;
     }
     Object.defineProperty(c.prototype, "prop2", {
         get: function () {
@@ -90,7 +100,7 @@ var c = (function (_super) {
                 var _super = 10; // Should be error
             };
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return c;

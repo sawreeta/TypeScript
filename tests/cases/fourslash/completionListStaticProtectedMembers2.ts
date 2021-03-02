@@ -26,45 +26,46 @@
 ////    }
 ////}
 
-
-// Same class, everything is visible
-goTo.marker("1");
-verify.not.memberListContains('privateMethod');
-verify.not.memberListContains('privateProperty');
-verify.memberListContains('protectedMethod');
-verify.memberListContains('protectedProperty');
-verify.memberListContains('publicMethod');
-verify.memberListContains('publicProperty');
-verify.memberListContains('protectedOverriddenMethod');
-verify.memberListContains('protectedOverriddenProperty');
-
-goTo.marker("2");
-verify.not.memberListContains('privateMethod');
-verify.not.memberListContains('privateProperty');
-verify.memberListContains('protectedMethod');
-verify.memberListContains('protectedProperty');
-verify.memberListContains('publicMethod');
-verify.memberListContains('publicProperty');
-verify.memberListContains('protectedOverriddenMethod');
-verify.memberListContains('protectedOverriddenProperty');
-
-goTo.marker("3");
-verify.not.memberListContains('privateMethod');
-verify.not.memberListContains('privateProperty');
-verify.memberListContains('protectedMethod');
-verify.memberListContains('protectedProperty');
-verify.memberListContains('publicMethod');
-verify.memberListContains('publicProperty');
-verify.memberListContains('protectedOverriddenMethod');
-verify.memberListContains('protectedOverriddenProperty');
-
-// only public and protected methods of the base class are accessible through super
-goTo.marker("4");
-verify.not.memberListContains('privateMethod');
-verify.not.memberListContains('privateProperty');
-verify.memberListContains('protectedMethod');
-verify.not.memberListContains('protectedProperty');
-verify.memberListContains('publicMethod');
-verify.not.memberListContains('publicProperty');
-verify.memberListContains('protectedOverriddenMethod');
-verify.not.memberListContains('protectedOverriddenProperty');
+verify.completions(
+    {
+        // Same class, everything is visible
+        marker: ["1"],
+        exact: [
+            { name: "prototype", sortText: completion.SortText.LocationPriority },
+            { name: "protectedMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "publicMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "publicProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedOverriddenMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedOverriddenProperty", sortText: completion.SortText.LocalDeclarationPriority},
+            ...completion.functionMembers,
+        ],
+    },
+    {
+        marker: ["2", "3"],
+        exact: [
+            { name: "prototype", sortText: completion.SortText.LocationPriority },
+            { name: "protectedOverriddenMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedOverriddenProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "test", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "publicMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "publicProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            ...completion.functionMembers,
+        ],
+    },
+    {
+        // only public and protected methods of the base class are accessible through super
+        marker: "4",
+        exact: [
+            { name: "protectedMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "publicMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedOverriddenMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "apply", sortText: completion.SortText.LocationPriority },
+            { name: "call", sortText: completion.SortText.LocationPriority },
+            { name: "bind", sortText: completion.SortText.LocationPriority },
+            { name: "toString", sortText: completion.SortText.LocationPriority },
+        ],
+    },
+);

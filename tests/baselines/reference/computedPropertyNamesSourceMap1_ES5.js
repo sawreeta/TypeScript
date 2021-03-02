@@ -9,7 +9,7 @@ class C {
 }
 
 //// [computedPropertyNamesSourceMap1_ES5.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C.prototype["hello"] = function () {
@@ -19,7 +19,7 @@ var C = (function () {
         get: function () {
             return 0;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

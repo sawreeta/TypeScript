@@ -1,9 +1,15 @@
-error TS5053: Option 'allowJs' cannot be specified with option 'declaration'.
-error TS6082: Only 'amd' and 'system' modules are supported alongside --out.
+DifferentNamesNotSpecifiedWithAllowJs/tsconfig.json(3,5): error TS6082: Only 'amd' and 'system' modules are supported alongside --out.
 
 
-!!! error TS5053: Option 'allowJs' cannot be specified with option 'declaration'.
+==== DifferentNamesNotSpecifiedWithAllowJs/tsconfig.json (1 errors) ====
+    {
+      "compilerOptions": {
+        "out": "test.js",
+        ~~~~~
 !!! error TS6082: Only 'amd' and 'system' modules are supported alongside --out.
+        "allowJs": true
+      }
+    }
 ==== DifferentNamesNotSpecifiedWithAllowJs/a.ts (0 errors) ====
     var test = 10;
 ==== DifferentNamesNotSpecifiedWithAllowJs/b.js (0 errors) ====

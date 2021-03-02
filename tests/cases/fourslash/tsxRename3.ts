@@ -9,12 +9,11 @@
 //// }
 //// class MyClass {
 ////   props: {
-////     [|name|]?: string;
+////     [|[|{| "contextRangeIndex": 0 |}name|]?: string;|]
 ////     size?: number;
 //// }
-//// 
-//// 
-//// var x = <MyClass [|n/**/ame|]='hello'/>;
+////
+////
+//// var x = <MyClass [|[|{| "contextRangeIndex": 2 |}name|]='hello'|]/>;
 
-goTo.marker();
-verify.renameLocations(false, false);
+verify.rangesWithSameTextAreRenameLocations("name");

@@ -13,8 +13,9 @@ function foo() {
 function bar() {
 }
 
+
 //// [out.js]
-var c = (function () {
+var c = /** @class */ (function () {
     function c() {
     }
     return c;
@@ -29,3 +30,5 @@ function foo() {
 //// [out.d.ts]
 declare class c {
 }
+declare function bar(): void;
+declare function foo(): void;

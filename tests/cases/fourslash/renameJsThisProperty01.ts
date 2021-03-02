@@ -3,10 +3,9 @@
 // @allowJs: true
 // @Filename: a.js
 ////function bar() {
-////    this.[|x|] = 10;
+////    [|this.[|{| "contextRangeIndex": 0 |}x|] = 10;|]
 ////}
 ////var t = new bar();
-////t./**/[|x|] = 11;
+////[|t.[|{| "contextRangeIndex": 2 |}x|] = 11;|]
 
-goTo.marker();
-verify.renameLocations( /*findInStrings*/ false, /*findInComments*/ false);
+verify.rangesWithSameTextAreRenameLocations("x");

@@ -1,14 +1,11 @@
 /// <reference path='fourslash.ts'/>
 
-// Global interface reference.
-
 // @Filename: referencesForGlobals_1.ts
-////declare module "[|foo|]" {
+////[|declare module "[|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}foo|]" {
 ////    var f: number;
-////}
-
+////}|]
 
 // @Filename: referencesForGlobals_2.ts
-////import f = require("[|foo|]");
+////[|import f = require("[|{| "contextRangeIndex": 2 |}foo|]");|]
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup('module "foo"', "foo");

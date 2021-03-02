@@ -1,9 +1,9 @@
 /// <reference path="fourslash.ts" />
 
 // @Filename: a.ts
-////function [|decorator|](target) {
+////[|function [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}decorator|](target) {
 ////    return target;
-////}
+////}|]
 ////[|decorator|]();
 
 // @Filename: b.ts
@@ -13,4 +13,4 @@
 ////    method() {}
 ////}
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("function decorator(target: any): any", "decorator");

@@ -11,7 +11,9 @@ export function test(foo: Foo) {
 
 //// [exportVisibility.js]
 "use strict";
-var Foo = (function () {
+exports.__esModule = true;
+exports.test = exports.foo = exports.Foo = void 0;
+var Foo = /** @class */ (function () {
     function Foo() {
     }
     return Foo;

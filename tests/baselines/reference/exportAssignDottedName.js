@@ -12,6 +12,8 @@ export = foo1.x; // Ok
 
 //// [foo1.js]
 "use strict";
+exports.__esModule = true;
+exports.x = void 0;
 function x() {
     return true;
 }

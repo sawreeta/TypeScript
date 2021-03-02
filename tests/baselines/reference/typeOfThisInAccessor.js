@@ -32,7 +32,7 @@ var x = {
 }
 
 //// [typeOfThisInAccessor.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "x", {
@@ -40,7 +40,7 @@ var C = (function () {
             var r = this; // C
             return 1;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "y", {
@@ -48,12 +48,12 @@ var C = (function () {
             var r2 = this; // typeof C
             return 1;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;
 }());
-var D = (function () {
+var D = /** @class */ (function () {
     function D() {
     }
     Object.defineProperty(D.prototype, "x", {
@@ -61,7 +61,7 @@ var D = (function () {
             var r = this; // D<T>
             return 1;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(D, "y", {
@@ -69,7 +69,7 @@ var D = (function () {
             var r2 = this; // typeof D
             return 1;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return D;

@@ -13,7 +13,9 @@ export = A;
 //// [A.js]
 define(["require", "exports"], function (require, exports) {
     "use strict";
-    var A = (function () {
+    exports.__esModule = true;
+    exports.A = void 0;
+    var A = /** @class */ (function () {
         function A() {
         }
         return A;

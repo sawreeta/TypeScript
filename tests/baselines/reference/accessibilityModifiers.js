@@ -1,5 +1,4 @@
 //// [accessibilityModifiers.ts]
-
 // No errors
 class C {
     private static privateProperty;
@@ -47,96 +46,96 @@ class E {
 
 //// [accessibilityModifiers.js]
 // No errors
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C.privateMethod = function () { };
     Object.defineProperty(C, "privateGetter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "privateSetter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     C.protectedMethod = function () { };
     Object.defineProperty(C, "protectedGetter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "protectedSetter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     C.publicMethod = function () { };
     Object.defineProperty(C, "publicGetter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "publicSetter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;
 }());
 // Errors, accessibility modifiers must precede static
-var D = (function () {
+var D = /** @class */ (function () {
     function D() {
     }
     D.privateMethod = function () { };
     Object.defineProperty(D, "privateGetter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(D, "privateSetter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     D.protectedMethod = function () { };
     Object.defineProperty(D, "protectedGetter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(D, "protectedSetter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     D.publicMethod = function () { };
     Object.defineProperty(D, "publicGetter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(D, "publicSetter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return D;
 }());
 // Errors, multiple accessibility modifier
-var E = (function () {
+var E = /** @class */ (function () {
     function E() {
     }
     E.prototype.method = function () { };
     Object.defineProperty(E.prototype, "getter", {
         get: function () { return 0; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(E.prototype, "setter", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return E;

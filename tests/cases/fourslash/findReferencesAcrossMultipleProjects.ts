@@ -1,14 +1,14 @@
 /// <reference path="fourslash.ts" />
 
 //@Filename: a.ts
-////var [|x|]: number;
+////[|var [|{| "isDefinition": true, "contextRangeIndex": 0 |}x|]: number;|]
 
 //@Filename: b.ts
 /////// <reference path="a.ts" />
-////[|x|]++;
+////[|{| "isWriteAccess": true |}x|]++;
 
 //@Filename: c.ts
 /////// <reference path="a.ts" />
-////[|x|]++;
+////[|{| "isWriteAccess": true |}x|]++;
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("var x: number", "x");

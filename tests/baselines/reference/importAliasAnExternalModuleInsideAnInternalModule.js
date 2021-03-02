@@ -16,6 +16,8 @@ module m_private {
 
 //// [importAliasAnExternalModuleInsideAnInternalModule_file0.js]
 "use strict";
+exports.__esModule = true;
+exports.m = void 0;
 var m;
 (function (m) {
     function foo() { }
@@ -23,6 +25,7 @@ var m;
 })(m = exports.m || (exports.m = {}));
 //// [importAliasAnExternalModuleInsideAnInternalModule_file1.js]
 "use strict";
+exports.__esModule = true;
 var r = require("./importAliasAnExternalModuleInsideAnInternalModule_file0");
 var m_private;
 (function (m_private) {

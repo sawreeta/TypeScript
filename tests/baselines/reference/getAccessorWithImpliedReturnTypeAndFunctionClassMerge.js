@@ -30,7 +30,7 @@ module MyModule {
 //// [getAccessorWithImpliedReturnTypeAndFunctionClassMerge.js]
 var MyModule;
 (function (MyModule) {
-    var MyClass = (function () {
+    var MyClass = /** @class */ (function () {
         function MyClass() {
         }
         Object.defineProperty(MyClass.prototype, "myGetter", {
@@ -38,7 +38,7 @@ var MyModule;
                 var obj = {};
                 return obj;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         return MyClass;

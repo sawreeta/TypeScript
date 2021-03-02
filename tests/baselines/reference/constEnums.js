@@ -21,6 +21,7 @@ const enum Enum1 {
     N = E << 1,
     O = E >> B,
     P = E >> 1,
+    PQ = E ** 2,
     Q = -D,
     R = C & 5,
     S = 5 & C,
@@ -34,6 +35,7 @@ const enum Enum1 {
     W2 = Enum1.A0,
     W3 = Enum1["A0"],
     W4 = Enum1["W"],
+    W5 = Enum1[`V`],
 }
 
 
@@ -53,6 +55,7 @@ module A {
         export module C {
             export const enum E {
                 V3 = A.B.C.E["V2"] & 200,
+                V4 = A.B.C.E[`V1`] << 1,
             }
         }
     }
@@ -128,11 +131,12 @@ function foo(x: Enum1) {
         case Enum1.N:
         case Enum1.O:
         case Enum1.P:
+        case Enum1.PQ:
         case Enum1.Q:
         case Enum1.R:
         case Enum1.S:
         case Enum1["T"]:
-        case Enum1.U:
+        case Enum1[`U`]:
         case Enum1.V:
         case Enum1.W:
         case Enum1.W1:
@@ -200,11 +204,12 @@ function foo(x) {
         case 2 /* N */:
         case 0 /* O */:
         case 0 /* P */:
+        case 1 /* PQ */:
         case -1 /* Q */:
         case 0 /* R */:
         case 0 /* S */:
         case 11 /* "T" */:
-        case 11 /* U */:
+        case 11 /* `U` */:
         case 11 /* V */:
         case 11 /* W */:
         case 100 /* W1 */:

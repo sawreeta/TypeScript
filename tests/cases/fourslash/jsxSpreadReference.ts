@@ -14,10 +14,8 @@
 ////   }
 //// }
 ////
-//// var [|/*dst*/nn|]: {name?: string; size?: number};
+//// [|var [|/*dst*/{| "contextRangeIndex": 0 |}nn|]: {name?: string; size?: number};|]
 //// var x = <MyClass {...[|n/*src*/n|]}></MyClass>;
 
 verify.goToDefinition("src", "dst");
-
-goTo.marker('src');
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
+verify.rangesWithSameTextAreRenameLocations("nn");

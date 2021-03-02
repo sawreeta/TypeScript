@@ -1,20 +1,26 @@
-/// <reference path="../../factory.ts" />
-/// <reference path="../../visitor.ts" />
-
 /*@internal*/
 namespace ts {
     export function transformModule(context: TransformationContext) {
-        const transformModuleDelegates = createMap<(node: SourceFile) => SourceFile>({
-            [ModuleKind.None]: transformCommonJSModule,
-            [ModuleKind.CommonJS]: transformCommonJSModule,
-            [ModuleKind.AMD]: transformAMDModule,
-            [ModuleKind.UMD]: transformUMDModule,
-        });
+        interface AsynchronousDependencies {
+            aliasedModuleNames: Expression[];
+            unaliasedModuleNames: Expression[];
+            importAliasNames: ParameterDeclaration[];
+        }
+
+        function getTransformModuleDelegate(moduleKind: ModuleKind): (node: SourceFile) => SourceFile {
+            switch (moduleKind) {
+                case ModuleKind.AMD: return transformAMDModule;
+                case ModuleKind.UMD: return transformUMDModule;
+                default: return transformCommonJSModule;
+            }
+        }
 
         const {
+            factory,
+            getEmitHelperFactory: emitHelpers,
             startLexicalEnvironment,
             endLexicalEnvironment,
-            hoistVariableDeclaration,
+            hoistVariableDeclaration
         } = context;
 
         const compilerOptions = context.getCompilerOptions();
@@ -26,24 +32,22 @@ namespace ts {
         const previousOnEmitNode = context.onEmitNode;
         context.onSubstituteNode = onSubstituteNode;
         context.onEmitNode = onEmitNode;
-        context.enableSubstitution(SyntaxKind.Identifier);
-        context.enableSubstitution(SyntaxKind.BinaryExpression);
-        context.enableSubstitution(SyntaxKind.PrefixUnaryExpression);
-        context.enableSubstitution(SyntaxKind.PostfixUnaryExpression);
-        context.enableSubstitution(SyntaxKind.ShorthandPropertyAssignment);
-        context.enableEmitNotification(SyntaxKind.SourceFile);
+        context.enableSubstitution(SyntaxKind.Identifier); // Substitutes expression identifiers with imported/exported symbols.
+        context.enableSubstitution(SyntaxKind.BinaryExpression); // Substitutes assignments to exported symbols.
+        context.enableSubstitution(SyntaxKind.PrefixUnaryExpression); // Substitutes updates to exported symbols.
+        context.enableSubstitution(SyntaxKind.PostfixUnaryExpression); // Substitutes updates to exported symbols.
+        context.enableSubstitution(SyntaxKind.ShorthandPropertyAssignment); // Substitutes shorthand property assignments for imported/exported symbols.
+        context.enableEmitNotification(SyntaxKind.SourceFile); // Restore state when substituting nodes in a file.
 
-        let currentSourceFile: SourceFile;
-        let externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[];
-        let exportSpecifiers: Map<ExportSpecifier[]>;
-        let exportEquals: ExportAssignment;
-        let bindingNameExportSpecifiersMap: Map<ExportSpecifier[]>;
-        // Subset of exportSpecifiers that is a binding-name.
-        // This is to reduce amount of memory we have to keep around even after we done with module-transformer
-        const bindingNameExportSpecifiersForFileMap = createMap<Map<ExportSpecifier[]>>();
-        let hasExportStarsToExportValues: boolean;
+        const moduleInfoMap: ExternalModuleInfo[] = []; // The ExternalModuleInfo for each file.
+        const deferredExports: (Statement[] | undefined)[] = []; // Exports to defer until an EndOfDeclarationMarker is found.
 
-        return transformSourceFile;
+        let currentSourceFile: SourceFile; // The current file.
+        let currentModuleInfo: ExternalModuleInfo; // The ExternalModuleInfo for the current file.
+        let noSubstitution: boolean[]; // Set of nodes for which substitution rules should be ignored.
+        let needUMDDynamicImportHelper: boolean;
+
+        return chainBundle(context, transformSourceFile);
 
         /**
          * Transforms the module aspects of a SourceFile.
@@ -51,30 +55,32 @@ namespace ts {
          * @param node The SourceFile node.
          */
         function transformSourceFile(node: SourceFile) {
-            if (isDeclarationFile(node)) {
+            if (node.isDeclarationFile ||
+                !(isEffectiveExternalModule(node, compilerOptions) ||
+                    node.transformFlags & TransformFlags.ContainsDynamicImport ||
+                    (isJsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && outFile(compilerOptions)))) {
                 return node;
             }
 
-            if (isExternalModule(node) || compilerOptions.isolatedModules) {
-                currentSourceFile = node;
+            currentSourceFile = node;
+            currentModuleInfo = collectExternalModuleInfo(context, node, resolver, compilerOptions);
+            moduleInfoMap[getOriginalNodeId(node)] = currentModuleInfo;
 
-                // Collect information about the external module.
-                ({ externalImports, exportSpecifiers, exportEquals, hasExportStarsToExportValues } = collectExternalModuleInfo(node));
+            // Perform the transformation.
+            const transformModule = getTransformModuleDelegate(moduleKind);
+            const updated = transformModule(node);
+            currentSourceFile = undefined!;
+            currentModuleInfo = undefined!;
+            needUMDDynamicImportHelper = false;
+            return updated;
+        }
 
-                // Perform the transformation.
-                const transformModule = transformModuleDelegates[moduleKind] || transformModuleDelegates[ModuleKind.None];
-                const updated = transformModule(node);
-                aggregateTransformFlags(updated);
 
-                currentSourceFile = undefined;
-                externalImports = undefined;
-                exportSpecifiers = undefined;
-                exportEquals = undefined;
-                hasExportStarsToExportValues = false;
-                return updated;
+        function shouldEmitUnderscoreUnderscoreESModule() {
+            if (!currentModuleInfo.exportEquals && isExternalModule(currentSourceFile)) {
+                return true;
             }
-
-            return node;
+            return false;
         }
 
         /**
@@ -86,16 +92,35 @@ namespace ts {
             startLexicalEnvironment();
 
             const statements: Statement[] = [];
-            const statementOffset = addPrologueDirectives(statements, node.statements, /*ensureUseStrict*/ !compilerOptions.noImplicitUseStrict, visitor);
-            addRange(statements, visitNodes(node.statements, visitor, isStatement, statementOffset));
-            addRange(statements, endLexicalEnvironment());
-            addExportEqualsIfNeeded(statements, /*emitAsReturn*/ false);
+            const ensureUseStrict = getStrictOptionValue(compilerOptions, "alwaysStrict") || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
+            const statementOffset = factory.copyPrologue(node.statements, statements, ensureUseStrict && !isJsonSourceFile(node), sourceElementVisitor);
 
-            const updated = updateSourceFile(node, statements);
-            if (hasExportStarsToExportValues) {
-                setEmitFlags(updated, EmitFlags.EmitExportStar | getEmitFlags(node));
+            if (shouldEmitUnderscoreUnderscoreESModule()) {
+                append(statements, createUnderscoreUnderscoreESModule());
+            }
+            if (length(currentModuleInfo.exportedNames)) {
+                const chunkSize = 50;
+                for (let i=0; i<currentModuleInfo.exportedNames!.length; i += chunkSize) {
+                    append(
+                        statements,
+                        factory.createExpressionStatement(
+                            reduceLeft(
+                                currentModuleInfo.exportedNames!.slice(i, i + chunkSize),
+                                (prev, nextId) => factory.createAssignment(factory.createPropertyAccessExpression(factory.createIdentifier("exports"), factory.createIdentifier(idText(nextId))), prev),
+                                factory.createVoidZero() as Expression
+                            )
+                        )
+                    );
+                }
             }
 
+            append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
+            addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
+            addExportEqualsIfNeeded(statements, /*emitAsReturn*/ false);
+            insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+
+            const updated = factory.updateSourceFile(node, setTextRange(factory.createNodeArray(statements), node.statements));
+            addEmitHelpers(updated, context.readEmitHelpers());
             return updated;
         }
 
@@ -105,31 +130,10 @@ namespace ts {
          * @param node The SourceFile node.
          */
         function transformAMDModule(node: SourceFile) {
-            const define = createIdentifier("define");
-            const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
-            return transformAsynchronousModule(node, define, moduleName, /*includeNonAmdDependencies*/ true);
-        }
+            const define = factory.createIdentifier("define");
+            const moduleName = tryGetModuleNameFromFile(factory, node, host, compilerOptions);
+            const jsonSourceFile = isJsonSourceFile(node) && node;
 
-        /**
-         * Transforms a SourceFile into a UMD module.
-         *
-         * @param node The SourceFile node.
-         */
-        function transformUMDModule(node: SourceFile) {
-            const define = createIdentifier("define");
-            setEmitFlags(define, EmitFlags.UMDDefine);
-            return transformAsynchronousModule(node, define, /*moduleName*/ undefined, /*includeNonAmdDependencies*/ false);
-        }
-
-        /**
-         * Transforms a SourceFile into an AMD or UMD module.
-         *
-         * @param node The SourceFile node.
-         * @param define The expression used to define the module.
-         * @param moduleName An expression for the module name, if available.
-         * @param includeNonAmdDependencies A value indicating whether to incldue any non-AMD dependencies.
-         */
-        function transformAsynchronousModule(node: SourceFile, define: Expression, moduleName: Expression, includeNonAmdDependencies: boolean) {
             // An AMD define function has the following shape:
             //
             //     define(id?, dependencies?, factory);
@@ -151,50 +155,267 @@ namespace ts {
             //
             // we need to add modules without alias names to the end of the dependencies list
 
-            const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, includeNonAmdDependencies);
+            const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, /*includeNonAmdDependencies*/ true);
 
             // Create an updated SourceFile:
             //
-            //     define(moduleName?, ["module1", "module2"], function ...
-            return updateSourceFile(node, [
-                createStatement(
-                    createCall(
-                        define,
-                        /*typeArguments*/ undefined,
-                        [
-                            // Add the module name (if provided).
-                            ...(moduleName ? [moduleName] : []),
-
-                            // Add the dependency array argument:
-                            //
-                            //     ["require", "exports", module1", "module2", ...]
-                            createArrayLiteral([
-                                createLiteral("require"),
-                                createLiteral("exports"),
-                                ...aliasedModuleNames,
-                                ...unaliasedModuleNames
-                            ]),
-
-                            // Add the module body function argument:
-                            //
-                            //     function (require, exports, module1, module2) ...
-                            createFunctionExpression(
-                                /*modifiers*/ undefined,
-                                /*asteriskToken*/ undefined,
-                                /*name*/ undefined,
-                                /*typeParameters*/ undefined,
+            //     define(mofactory.updateSourceFile", "module2"], function ...
+            const updated = factory.updateSourceFile(node,
+                setTextRange(
+                    factory.createNodeArray([
+                        factory.createExpressionStatement(
+                            factory.createCallExpression(
+                                define,
+                                /*typeArguments*/ undefined,
                                 [
-                                    createParameter("require"),
-                                    createParameter("exports"),
-                                    ...importAliasNames
-                                ],
-                                /*type*/ undefined,
-                                transformAsynchronousModuleBody(node)
+                                    // Add the module name (if provided).
+                                    ...(moduleName ? [moduleName] : []),
+
+                                    // Add the dependency array argument:
+                                    //
+                                    //     ["require", "exports", module1", "module2", ...]
+                                    factory.createArrayLiteralExpression(jsonSourceFile ? emptyArray : [
+                                        factory.createStringLiteral("require"),
+                                        factory.createStringLiteral("exports"),
+                                        ...aliasedModuleNames,
+                                        ...unaliasedModuleNames
+                                    ]),
+
+                                    // Add the module body function argument:
+                                    //
+                                    //     function (require, exports, module1, module2) ...
+                                    jsonSourceFile ?
+                                        jsonSourceFile.statements.length ? jsonSourceFile.statements[0].expression : factory.createObjectLiteralExpression() :
+                                        factory.createFunctionExpression(
+                                            /*modifiers*/ undefined,
+                                            /*asteriskToken*/ undefined,
+                                            /*name*/ undefined,
+                                            /*typeParameters*/ undefined,
+                                            [
+                                                factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, "require"),
+                                                factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, "exports"),
+                                                ...importAliasNames
+                                            ],
+                                            /*type*/ undefined,
+                                            transformAsynchronousModuleBody(node)
+                                        )
+                                ]
                             )
-                        ]
-                    )
+                        )
+                    ]),
+                    /*location*/ node.statements
                 )
-            ]);
+            );
+
+            addEmitHelpers(updated, context.readEmitHelpers());
+            return updated;
+        }
+
+        /**
+         * Transforms a SourceFile into a UMD module.
+         *
+         * @param node The SourceFile node.
+         */
+        function transformUMDModule(node: SourceFile) {
+            const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, /*includeNonAmdDependencies*/ false);
+            const moduleName = tryGetModuleNameFromFile(factory, node, host, compilerOptions);
+            const umdHeader = factory.createFunctionExpression(
+                /*modifiers*/ undefined,
+                /*asteriskToken*/ undefined,
+                /*name*/ undefined,
+                /*typeParameters*/ undefined,
+                [factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, "factory")],
+                /*type*/ undefined,
+                setTextRange(
+                    factory.createBlock(
+                        [
+                            factory.createIfStatement(
+                                factory.createLogicalAnd(
+                                    factory.createTypeCheck(factory.createIdentifier("module"), "object"),
+                                    factory.createTypeCheck(factory.createPropertyAccessExpression(factory.createIdentifier("module"), "exports"), "object")
+                                ),
+                                factory.createBlock([
+                                    factory.createVariableStatement(
+                                        /*modifiers*/ undefined,
+                                        [
+                                            factory.createVariableDeclaration(
+                                                "v",
+                                                /*exclamationToken*/ undefined,
+                                                /*type*/ undefined,
+                                                factory.createCallExpression(
+                                                    factory.createIdentifier("factory"),
+                                                    /*typeArguments*/ undefined,
+                                                    [
+                                                        factory.createIdentifier("require"),
+                                                        factory.createIdentifier("exports")
+                                                    ]
+                                                )
+                                            )
+                                        ]
+                                    ),
+                                    setEmitFlags(
+                                        factory.createIfStatement(
+                                            factory.createStrictInequality(
+                                                factory.createIdentifier("v"),
+                                                factory.createIdentifier("undefined")
+                                            ),
+                                            factory.createExpressionStatement(
+                                                factory.createAssignment(
+                                                    factory.createPropertyAccessExpression(factory.createIdentifier("module"), "exports"),
+                                                    factory.createIdentifier("v")
+                                                )
+                                            )
+                                        ),
+                                        EmitFlags.SingleLine
+                                    )
+                                ]),
+                                factory.createIfStatement(
+                                    factory.createLogicalAnd(
+                                        factory.createTypeCheck(factory.createIdentifier("define"), "function"),
+                                        factory.createPropertyAccessExpression(factory.createIdentifier("define"), "amd")
+                                    ),
+                                    factory.createBlock([
+                                        factory.createExpressionStatement(
+                                            factory.createCallExpression(
+                                                factory.createIdentifier("define"),
+                                                /*typeArguments*/ undefined,
+                                                [
+                                                    // Add the module name (if provided).
+                                                    ...(moduleName ? [moduleName] : []),
+                                                    factory.createArrayLiteralExpression([
+                                                        factory.createStringLiteral("require"),
+                                                        factory.createStringLiteral("exports"),
+                                                        ...aliasedModuleNames,
+                                                        ...unaliasedModuleNames
+                                                    ]),
+                                                    factory.createIdentifier("factory")
+                                                ]
+                                            )
+                                        )
+                                    ])
+                                )
+                            )
+                        ],
+                        /*multiLine*/ true
+                    ),
+                    /*location*/ undefined
+                )
+            );
+
+            // Create an updated SourceFile:
+            //
+            //  (function (factory) {
+            //      if (typeof module === "object" && typeof module.exports === "object") {
+            //          var v = factory(require, exports);
+            //          if (v !== undefined) module.exports = v;
+            //      }
+            //      else if (typeof define === 'function' && define.amd) {
+            //          define(["require", "exports"], factory);
+            //      }
+            //  })(function ...)
+
+            const updated = factory.updateSourceFile(
+                node,
+                setTextRange(
+                    factory.createNodeArray([
+                        factory.createExpressionStatement(
+                            factory.createCallExpression(
+                                umdHeader,
+                                /*typeArguments*/ undefined,
+                                [
+                                    // Add the module body function argument:
+                                    //
+                                    //     function (require, exports) ...
+                                    factory.createFunctionExpression(
+                                        /*modifiers*/ undefined,
+                                        /*asteriskToken*/ undefined,
+                                        /*name*/ undefined,
+                                        /*typeParameters*/ undefined,
+                                        [
+                                            factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, "require"),
+                                            factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, "exports"),
+                                            ...importAliasNames
+                                        ],
+                                        /*type*/ undefined,
+                                        transformAsynchronousModuleBody(node)
+                                    )
+                                ]
+                            )
+                        )
+                    ]),
+                    /*location*/ node.statements
+                )
+            );
+
+            addEmitHelpers(updated, context.readEmitHelpers());
+            return updated;
+        }
+
+        /**
+         * Collect the additional asynchronous dependencies for the module.
+         *
+         * @param node The source file.
+         * @param includeNonAmdDependencies A value indicating whether to include non-AMD dependencies.
+         */
+        function collectAsynchronousDependencies(node: SourceFile, includeNonAmdDependencies: boolean): AsynchronousDependencies {
+            // names of modules with corresponding parameter in the factory function
+            const aliasedModuleNames: Expression[] = [];
+
+            // names of modules with no corresponding parameters in factory function
+            const unaliasedModuleNames: Expression[] = [];
+
+            // names of the parameters in the factory function; these
+            // parameters need to match the indexes of the corresponding
+            // module names in aliasedModuleNames.
+            const importAliasNames: ParameterDeclaration[] = [];
+
+            // Fill in amd-dependency tags
+            for (const amdDependency of node.amdDependencies) {
+                if (amdDependency.name) {
+                    aliasedModuleNames.push(factory.createStringLiteral(amdDependency.path));
+                    importAliasNames.push(factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, amdDependency.name));
+                }
+                else {
+                    unaliasedModuleNames.push(factory.createStringLiteral(amdDependency.path));
+                }
+            }
+
+            for (const importNode of currentModuleInfo.externalImports) {
+                // Find the name of the external module
+                const externalModuleName = getExternalModuleNameLiteral(factory, importNode, currentSourceFile, host, resolver, compilerOptions);
+
+                // Find the name of the module alias, if there is one
+                const importAliasName = getLocalNameForExternalImport(factory, importNode, currentSourceFile);
+                // It is possible that externalModuleName is undefined if it is not string literal.
+                // This can happen in the invalid import syntax.
+                // E.g : "import * from alias from 'someLib';"
+                if (externalModuleName) {
+                    if (includeNonAmdDependencies && importAliasName) {
+                        // Set emitFlags on the name of the classDeclaration
+                        // This is so that when printer will not substitute the identifier
+                        setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
+                        aliasedModuleNames.push(externalModuleName);
+                        importAliasNames.push(factory.createParameterDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, importAliasName));
+                    }
+                    else {
+                        unaliasedModuleNames.push(externalModuleName);
+                    }
+                }
+            }
+
+            return { aliasedModuleNames, unaliasedModuleNames, importAliasNames };
+        }
+
+        function getAMDImportExpressionForImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration) {
+            if (isImportEqualsDeclaration(node) || isExportDeclaration(node) || !getExternalModuleNameLiteral(factory, node, currentSourceFile, host, resolver, compilerOptions)) {
+                return undefined;
+            }
+            const name = getLocalNameForExternalImport(factory, node, currentSourceFile)!; // TODO: GH#18217
+            const expr = getHelperExpressionForImport(node, name);
+            if (expr === name) {
+                return undefined;
+            }
+            return factory.createExpressionStatement(factory.createAssignment(name, expr));
         }
 
         /**
@@ -206,63 +427,84 @@ namespace ts {
             startLexicalEnvironment();
 
             const statements: Statement[] = [];
-            const statementOffset = addPrologueDirectives(statements, node.statements, /*ensureUseStrict*/ !compilerOptions.noImplicitUseStrict, visitor);
+            const statementOffset = factory.copyPrologue(node.statements, statements, /*ensureUseStrict*/ !compilerOptions.noImplicitUseStrict, sourceElementVisitor);
+
+            if (shouldEmitUnderscoreUnderscoreESModule()) {
+                append(statements, createUnderscoreUnderscoreESModule());
+            }
+            if (length(currentModuleInfo.exportedNames)) {
+                append(statements, factory.createExpressionStatement(reduceLeft(currentModuleInfo.exportedNames, (prev, nextId) => factory.createAssignment(factory.createPropertyAccessExpression(factory.createIdentifier("exports"), factory.createIdentifier(idText(nextId))), prev), factory.createVoidZero() as Expression)));
+            }
 
             // Visit each statement of the module body.
-            addRange(statements, visitNodes(node.statements, visitor, isStatement, statementOffset));
-
-            // End the lexical environment for the module body
-            // and merge any new lexical declarations.
-            addRange(statements, endLexicalEnvironment());
+            append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
+            if (moduleKind === ModuleKind.AMD) {
+                addRange(statements, mapDefined(currentModuleInfo.externalImports, getAMDImportExpressionForImport));
+            }
+            addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
 
             // Append the 'export =' statement if provided.
             addExportEqualsIfNeeded(statements, /*emitAsReturn*/ true);
 
-            const body = createBlock(statements, /*location*/ undefined, /*multiLine*/ true);
-            if (hasExportStarsToExportValues) {
-                // If we have any `export * from ...` declarations
-                // we need to inform the emitter to add the __export helper.
-                setEmitFlags(body, EmitFlags.EmitExportStar);
+            // End the lexical environment for the module body
+            // and merge any new lexical declarations.
+            insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+
+            const body = factory.createBlock(statements, /*multiLine*/ true);
+            if (needUMDDynamicImportHelper) {
+                addEmitHelper(body, dynamicImportUMDHelper);
             }
 
             return body;
         }
 
+        /**
+         * Adds the down-level representation of `export=` to the statement list if one exists
+         * in the source file.
+         *
+         * @param statements The Statement list to modify.
+         * @param emitAsReturn A value indicating whether to emit the `export=` statement as a
+         * return statement.
+         */
         function addExportEqualsIfNeeded(statements: Statement[], emitAsReturn: boolean) {
-            if (exportEquals) {
-                if (emitAsReturn) {
-                    const statement = createReturn(
-                        exportEquals.expression,
-                        /*location*/ exportEquals
-                    );
+            if (currentModuleInfo.exportEquals) {
+                const expressionResult = visitNode(currentModuleInfo.exportEquals.expression, moduleExpressionElementVisitor);
+                if (expressionResult) {
+                    if (emitAsReturn) {
+                        const statement = factory.createReturnStatement(expressionResult);
+                        setTextRange(statement, currentModuleInfo.exportEquals);
+                        setEmitFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
+                        statements.push(statement);
+                    }
+                    else {
+                        const statement = factory.createExpressionStatement(
+                            factory.createAssignment(
+                                factory.createPropertyAccessExpression(
+                                    factory.createIdentifier("module"),
+                                    "exports"
+                                ),
+                                expressionResult
+                            )
+                        );
 
-                    setEmitFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
-                    statements.push(statement);
-                }
-                else {
-                    const statement = createStatement(
-                        createAssignment(
-                            createPropertyAccess(
-                                createIdentifier("module"),
-                                "exports"
-                            ),
-                            exportEquals.expression
-                        ),
-                        /*location*/ exportEquals
-                    );
-
-                    setEmitFlags(statement, EmitFlags.NoComments);
-                    statements.push(statement);
+                        setTextRange(statement, currentModuleInfo.exportEquals);
+                        setEmitFlags(statement, EmitFlags.NoComments);
+                        statements.push(statement);
+                    }
                 }
             }
         }
 
+        //
+        // Top-Level Source Element Visitors
+        //
+
         /**
          * Visits a node at the top level of the source file.
          *
-         * @param node The node.
+         * @param node The node to visit.
          */
-        function visitor(node: Node): VisitResult<Node> {
+        function sourceElementVisitor(node: Node): VisitResult<Node> {
             switch (node.kind) {
                 case SyntaxKind.ImportDeclaration:
                     return visitImportDeclaration(<ImportDeclaration>node);
@@ -285,47 +527,288 @@ namespace ts {
                 case SyntaxKind.ClassDeclaration:
                     return visitClassDeclaration(<ClassDeclaration>node);
 
-                case SyntaxKind.ExpressionStatement:
-                    return visitExpressionStatement(<ExpressionStatement>node);
+                case SyntaxKind.MergeDeclarationMarker:
+                    return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
+
+                case SyntaxKind.EndOfDeclarationMarker:
+                    return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
 
                 default:
-                    // This visitor does not descend into the tree, as export/import statements
-                    // are only transformed at the top level of a file.
-                    return node;
+                    return visitEachChild(node, moduleExpressionElementVisitor, context);
             }
+        }
+
+        function moduleExpressionElementVisitor(node: Expression): VisitResult<Expression> {
+            // This visitor does not need to descend into the tree if there is no dynamic import or destructuring assignment,
+            // as export/import statements are only transformed at the top level of a file.
+            if (!(node.transformFlags & TransformFlags.ContainsDynamicImport) && !(node.transformFlags & TransformFlags.ContainsDestructuringAssignment)) {
+                return node;
+            }
+
+            if (isImportCall(node)) {
+                return visitImportCallExpression(node);
+            }
+            else if (isDestructuringAssignment(node)) {
+                return visitDestructuringAssignment(node);
+            }
+            else {
+                return visitEachChild(node, moduleExpressionElementVisitor, context);
+            }
+        }
+
+        function destructuringNeedsFlattening(node: Expression): boolean {
+            if (isObjectLiteralExpression(node)) {
+                for (const elem of node.properties) {
+                    switch (elem.kind) {
+                        case SyntaxKind.PropertyAssignment:
+                            if (destructuringNeedsFlattening(elem.initializer)) {
+                                return true;
+                            }
+                            break;
+                        case SyntaxKind.ShorthandPropertyAssignment:
+                            if (destructuringNeedsFlattening(elem.name)) {
+                                return true;
+                            }
+                            break;
+                        case SyntaxKind.SpreadAssignment:
+                            if (destructuringNeedsFlattening(elem.expression)) {
+                                return true;
+                            }
+                            break;
+                        case SyntaxKind.MethodDeclaration:
+                        case SyntaxKind.GetAccessor:
+                        case SyntaxKind.SetAccessor:
+                            return false;
+                        default: Debug.assertNever(elem, "Unhandled object member kind");
+                    }
+                }
+            }
+            else if (isArrayLiteralExpression(node)) {
+                for (const elem of node.elements) {
+                    if (isSpreadElement(elem)) {
+                        if (destructuringNeedsFlattening(elem.expression)) {
+                            return true;
+                        }
+                    }
+                    else if (destructuringNeedsFlattening(elem)) {
+                        return true;
+                    }
+                }
+            }
+            else if (isIdentifier(node)) {
+                return length(getExports(node)) > (isExportName(node) ? 1 : 0);
+            }
+            return false;
+        }
+
+        function visitDestructuringAssignment(node: DestructuringAssignment): Expression {
+            if (destructuringNeedsFlattening(node.left)) {
+                return flattenDestructuringAssignment(node, moduleExpressionElementVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
+            }
+            return visitEachChild(node, moduleExpressionElementVisitor, context);
+        }
+
+        function visitImportCallExpression(node: ImportCall): Expression {
+            const externalModuleName = getExternalModuleNameLiteral(factory, node, currentSourceFile, host, resolver, compilerOptions);
+            const firstArgument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElementVisitor);
+            // Only use the external module name if it differs from the first argument. This allows us to preserve the quote style of the argument on output.
+            const argument = externalModuleName && (!firstArgument || !isStringLiteral(firstArgument) || firstArgument.text !== externalModuleName.text) ? externalModuleName : firstArgument;
+            const containsLexicalThis = !!(node.transformFlags & TransformFlags.ContainsLexicalThis);
+            switch (compilerOptions.module) {
+                case ModuleKind.AMD:
+                    return createImportCallExpressionAMD(argument, containsLexicalThis);
+                case ModuleKind.UMD:
+                    return createImportCallExpressionUMD(argument ?? factory.createVoidZero(), containsLexicalThis);
+                case ModuleKind.CommonJS:
+                default:
+                    return createImportCallExpressionCommonJS(argument, containsLexicalThis);
+            }
+        }
+
+        function createImportCallExpressionUMD(arg: Expression, containsLexicalThis: boolean): Expression {
+            // (function (factory) {
+            //      ... (regular UMD)
+            // }
+            // })(function (require, exports, useSyncRequire) {
+            //      "use strict";
+            //      Object.defineProperty(exports, "__esModule", { value: true });
+            //      var __syncRequire = typeof module === "object" && typeof module.exports === "object";
+            //      var __resolved = new Promise(function (resolve) { resolve(); });
+            //      .....
+            //      __syncRequire
+            //          ? __resolved.then(function () { return require(x); }) /*CommonJs Require*/
+            //          : new Promise(function (_a, _b) { require([x], _a, _b); }); /*Amd Require*/
+            // });
+            needUMDDynamicImportHelper = true;
+            if (isSimpleCopiableExpression(arg)) {
+                const argClone = isGeneratedIdentifier(arg) ? arg : isStringLiteral(arg) ? factory.createStringLiteralFromNode(arg) : setEmitFlags(setTextRange(factory.cloneNode(arg), arg), EmitFlags.NoComments);
+                return factory.createConditionalExpression(
+                    /*condition*/ factory.createIdentifier("__syncRequire"),
+                    /*questionToken*/ undefined,
+                    /*whenTrue*/ createImportCallExpressionCommonJS(arg, containsLexicalThis),
+                    /*colonToken*/ undefined,
+                    /*whenFalse*/ createImportCallExpressionAMD(argClone, containsLexicalThis)
+                );
+            }
+            else {
+                const temp = factory.createTempVariable(hoistVariableDeclaration);
+                return factory.createComma(factory.createAssignment(temp, arg), factory.createConditionalExpression(
+                    /*condition*/ factory.createIdentifier("__syncRequire"),
+                    /*questionToken*/ undefined,
+                    /*whenTrue*/ createImportCallExpressionCommonJS(temp, containsLexicalThis),
+                    /*colonToken*/ undefined,
+                    /*whenFalse*/ createImportCallExpressionAMD(temp, containsLexicalThis)
+                ));
+            }
+        }
+
+        function createImportCallExpressionAMD(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
+            // improt("./blah")
+            // emit as
+            // define(["require", "exports", "blah"], function (require, exports) {
+            //     ...
+            //     new Promise(function (_a, _b) { require([x], _a, _b); }); /*Amd Require*/
+            // });
+            const resolve = factory.createUniqueName("resolve");
+            const reject = factory.createUniqueName("reject");
+            const parameters = [
+                factory.createParameterDeclaration(/*decorator*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, /*name*/ resolve),
+                factory.createParameterDeclaration(/*decorator*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, /*name*/ reject)
+            ];
+            const body = factory.createBlock([
+                factory.createExpressionStatement(
+                    factory.createCallExpression(
+                        factory.createIdentifier("require"),
+                        /*typeArguments*/ undefined,
+                        [factory.createArrayLiteralExpression([arg || factory.createOmittedExpression()]), resolve, reject]
+                    )
+                )
+            ]);
+
+            let func: FunctionExpression | ArrowFunction;
+            if (languageVersion >= ScriptTarget.ES2015) {
+                func = factory.createArrowFunction(
+                    /*modifiers*/ undefined,
+                    /*typeParameters*/ undefined,
+                    parameters,
+                    /*type*/ undefined,
+                    /*equalsGreaterThanToken*/ undefined,
+                    body);
+            }
+            else {
+                func = factory.createFunctionExpression(
+                    /*modifiers*/ undefined,
+                    /*asteriskToken*/ undefined,
+                    /*name*/ undefined,
+                    /*typeParameters*/ undefined,
+                    parameters,
+                    /*type*/ undefined,
+                    body);
+
+                // if there is a lexical 'this' in the import call arguments, ensure we indicate
+                // that this new function expression indicates it captures 'this' so that the
+                // es2015 transformer will properly substitute 'this' with '_this'.
+                if (containsLexicalThis) {
+                    setEmitFlags(func, EmitFlags.CapturesThis);
+                }
+            }
+
+            const promise = factory.createNewExpression(factory.createIdentifier("Promise"), /*typeArguments*/ undefined, [func]);
+            if (compilerOptions.esModuleInterop) {
+                return factory.createCallExpression(factory.createPropertyAccessExpression(promise, factory.createIdentifier("then")), /*typeArguments*/ undefined, [emitHelpers().createImportStarCallbackHelper()]);
+            }
+            return promise;
+        }
+
+        function createImportCallExpressionCommonJS(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
+            // import("./blah")
+            // emit as
+            // Promise.resolve().then(function () { return require(x); }) /*CommonJs Require*/
+            // We have to wrap require in then callback so that require is done in asynchronously
+            // if we simply do require in resolve callback in Promise constructor. We will execute the loading immediately
+            const promiseResolveCall = factory.createCallExpression(factory.createPropertyAccessExpression(factory.createIdentifier("Promise"), "resolve"), /*typeArguments*/ undefined, /*argumentsArray*/ []);
+            let requireCall: Expression = factory.createCallExpression(factory.createIdentifier("require"), /*typeArguments*/ undefined, arg ? [arg] : []);
+            if (compilerOptions.esModuleInterop) {
+                requireCall = emitHelpers().createImportStarHelper(requireCall);
+            }
+
+            let func: FunctionExpression | ArrowFunction;
+            if (languageVersion >= ScriptTarget.ES2015) {
+                func = factory.createArrowFunction(
+                    /*modifiers*/ undefined,
+                    /*typeParameters*/ undefined,
+                    /*parameters*/ [],
+                    /*type*/ undefined,
+                    /*equalsGreaterThanToken*/ undefined,
+                    requireCall);
+            }
+            else {
+                func = factory.createFunctionExpression(
+                    /*modifiers*/ undefined,
+                    /*asteriskToken*/ undefined,
+                    /*name*/ undefined,
+                    /*typeParameters*/ undefined,
+                    /*parameters*/ [],
+                    /*type*/ undefined,
+                    factory.createBlock([factory.createReturnStatement(requireCall)]));
+
+                // if there is a lexical 'this' in the import call arguments, ensure we indicate
+                // that this new function expression indicates it captures 'this' so that the
+                // es2015 transformer will properly substitute 'this' with '_this'.
+                if (containsLexicalThis) {
+                    setEmitFlags(func, EmitFlags.CapturesThis);
+                }
+            }
+
+            return factory.createCallExpression(factory.createPropertyAccessExpression(promiseResolveCall, "then"), /*typeArguments*/ undefined, [func]);
+        }
+
+        function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
+            if (!compilerOptions.esModuleInterop || getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+                return innerExpr;
+            }
+            if (getExportNeedsImportStarHelper(node)) {
+                return emitHelpers().createImportStarHelper(innerExpr);
+            }
+            return innerExpr;
+        }
+
+        function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: Expression) {
+            if (!compilerOptions.esModuleInterop || getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+                return innerExpr;
+            }
+            if (getImportNeedsImportStarHelper(node)) {
+                return emitHelpers().createImportStarHelper(innerExpr);
+            }
+            if (getImportNeedsImportDefaultHelper(node)) {
+                return emitHelpers().createImportDefaultHelper(innerExpr);
+            }
+            return innerExpr;
         }
 
         /**
          * Visits an ImportDeclaration node.
          *
-         * @param node The ImportDeclaration node.
+         * @param node The node to visit.
          */
         function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
-            if (!contains(externalImports, node)) {
-                return undefined;
-            }
-
-            const statements: Statement[] = [];
+            let statements: Statement[] | undefined;
             const namespaceDeclaration = getNamespaceDeclarationNode(node);
             if (moduleKind !== ModuleKind.AMD) {
                 if (!node.importClause) {
                     // import "mod";
-                    statements.push(
-                        createStatement(
-                            createRequireCall(node),
-                            /*location*/ node
-                        )
-                    );
+                    return setOriginalNode(setTextRange(factory.createExpressionStatement(createRequireCall(node)), node), node);
                 }
                 else {
                     const variables: VariableDeclaration[] = [];
                     if (namespaceDeclaration && !isDefaultImport(node)) {
                         // import * as n from "mod";
                         variables.push(
-                            createVariableDeclaration(
-                                getSynthesizedClone(namespaceDeclaration.name),
+                            factory.createVariableDeclaration(
+                                factory.cloneNode(namespaceDeclaration.name),
+                                /*exclamationToken*/ undefined,
                                 /*type*/ undefined,
-                                createRequireCall(node)
+                                getHelperExpressionForImport(node, createRequireCall(node))
                             )
                         );
                     }
@@ -335,522 +818,904 @@ namespace ts {
                         // import d, { x, y } from "mod";
                         // import d, * as n from "mod";
                         variables.push(
-                            createVariableDeclaration(
-                                getGeneratedNameForNode(node),
+                            factory.createVariableDeclaration(
+                                factory.getGeneratedNameForNode(node),
+                                /*exclamationToken*/ undefined,
                                 /*type*/ undefined,
-                                createRequireCall(node)
+                                getHelperExpressionForImport(node, createRequireCall(node))
                             )
                         );
 
                         if (namespaceDeclaration && isDefaultImport(node)) {
                             variables.push(
-                                createVariableDeclaration(
-                                    getSynthesizedClone(namespaceDeclaration.name),
+                                factory.createVariableDeclaration(
+                                    factory.cloneNode(namespaceDeclaration.name),
+                                    /*exclamationToken*/ undefined,
                                     /*type*/ undefined,
-                                    getGeneratedNameForNode(node)
+                                    factory.getGeneratedNameForNode(node)
                                 )
                             );
                         }
                     }
 
-                    statements.push(
-                        createVariableStatement(
-                            /*modifiers*/ undefined,
-                            createConstDeclarationList(variables),
-                            /*location*/ node
+                    statements = append(statements,
+                        setOriginalNode(
+                            setTextRange(
+                                factory.createVariableStatement(
+                                    /*modifiers*/ undefined,
+                                    factory.createVariableDeclarationList(
+                                        variables,
+                                        languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
+                                    )
+                                ),
+                                /*location*/ node),
+                            /*original*/ node
                         )
                     );
                 }
             }
             else if (namespaceDeclaration && isDefaultImport(node)) {
                 // import d, * as n from "mod";
-                statements.push(
-                    createVariableStatement(
+                statements = append(statements,
+                    factory.createVariableStatement(
                         /*modifiers*/ undefined,
-                        createVariableDeclarationList([
-                            createVariableDeclaration(
-                                getSynthesizedClone(namespaceDeclaration.name),
-                                /*type*/ undefined,
-                                getGeneratedNameForNode(node),
-                                /*location*/ node
-                            )
-                        ])
+                        factory.createVariableDeclarationList(
+                            [
+                                setOriginalNode(
+                                    setTextRange(
+                                        factory.createVariableDeclaration(
+                                            factory.cloneNode(namespaceDeclaration.name),
+                                            /*exclamationToken*/ undefined,
+                                            /*type*/ undefined,
+                                            factory.getGeneratedNameForNode(node)
+                                        ),
+                                        /*location*/ node),
+                                    /*original*/ node
+                                )
+                            ],
+                            languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
+                        )
                     )
                 );
             }
 
-            addExportImportAssignments(statements, node);
+            if (hasAssociatedEndOfDeclarationMarker(node)) {
+                // Defer exports until we encounter an EndOfDeclarationMarker node
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportsOfImportDeclaration(deferredExports[id], node);
+            }
+            else {
+                statements = appendExportsOfImportDeclaration(statements, node);
+            }
+
             return singleOrMany(statements);
         }
 
-        function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-            if (!contains(externalImports, node)) {
-                return undefined;
+        /**
+         * Creates a `require()` call to import an external module.
+         *
+         * @param importNode The declararation to import.
+         */
+        function createRequireCall(importNode: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration) {
+            const moduleName = getExternalModuleNameLiteral(factory, importNode, currentSourceFile, host, resolver, compilerOptions);
+            const args: Expression[] = [];
+            if (moduleName) {
+                args.push(moduleName);
             }
 
-            // Set emitFlags on the name of the importEqualsDeclaration
-            // This is so the printer will not substitute the identifier
-            setEmitFlags(node.name, EmitFlags.NoSubstitution);
-            const statements: Statement[] = [];
+            return factory.createCallExpression(factory.createIdentifier("require"), /*typeArguments*/ undefined, args);
+        }
+
+        /**
+         * Visits an ImportEqualsDeclaration node.
+         *
+         * @param node The node to visit.
+         */
+        function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
+            Debug.assert(isExternalModuleImportEqualsDeclaration(node), "import= for internal module references should be handled in an earlier transformer.");
+
+            let statements: Statement[] | undefined;
             if (moduleKind !== ModuleKind.AMD) {
-                if (hasModifier(node, ModifierFlags.Export)) {
-                    statements.push(
-                        createStatement(
-                            createExportAssignment(
-                                node.name,
-                                createRequireCall(node)
-                            ),
-                            /*location*/ node
+                if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+                    statements = append(statements,
+                        setOriginalNode(
+                            setTextRange(
+                                factory.createExpressionStatement(
+                                    createExportExpression(
+                                        node.name,
+                                        createRequireCall(node)
+                                    )
+                                ),
+                                node),
+                            node
                         )
                     );
                 }
                 else {
-                    statements.push(
-                        createVariableStatement(
-                            /*modifiers*/ undefined,
-                            createVariableDeclarationList([
-                                createVariableDeclaration(
-                                    getSynthesizedClone(node.name),
-                                    /*type*/ undefined,
-                                    createRequireCall(node)
-                                )
-                            ],
-                            /*location*/ undefined,
-                            /*flags*/ languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None),
-                            /*location*/ node
+                    statements = append(statements,
+                        setOriginalNode(
+                            setTextRange(
+                                factory.createVariableStatement(
+                                    /*modifiers*/ undefined,
+                                    factory.createVariableDeclarationList(
+                                        [
+                                            factory.createVariableDeclaration(
+                                                factory.cloneNode(node.name),
+                                                /*exclamationToken*/ undefined,
+                                                /*type*/ undefined,
+                                                createRequireCall(node)
+                                            )
+                                        ],
+                                        /*flags*/ languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
+                                    )
+                                ),
+                                node),
+                            node
                         )
                     );
                 }
             }
             else {
-                if (hasModifier(node, ModifierFlags.Export)) {
-                    statements.push(
-                        createStatement(
-                            createExportAssignment(node.name, node.name),
-                            /*location*/ node
+                if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+                    statements = append(statements,
+                        setOriginalNode(
+                            setTextRange(
+                                factory.createExpressionStatement(
+                                    createExportExpression(factory.getExportName(node), factory.getLocalName(node))
+                                ),
+                                node),
+                            node
                         )
                     );
                 }
             }
 
-            addExportImportAssignments(statements, node);
-            return statements;
+            if (hasAssociatedEndOfDeclarationMarker(node)) {
+                // Defer exports until we encounter an EndOfDeclarationMarker node
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportsOfImportEqualsDeclaration(deferredExports[id], node);
+            }
+            else {
+                statements = appendExportsOfImportEqualsDeclaration(statements, node);
+            }
+
+            return singleOrMany(statements);
         }
 
+        /**
+         * Visits an ExportDeclaration node.
+         *
+         * @param The node to visit.
+         */
         function visitExportDeclaration(node: ExportDeclaration): VisitResult<Statement> {
-            if (!contains(externalImports, node)) {
+            if (!node.moduleSpecifier) {
+                // Elide export declarations with no module specifier as they are handled
+                // elsewhere.
                 return undefined;
             }
 
-            const generatedName = getGeneratedNameForNode(node);
-            if (node.exportClause) {
+            const generatedName = factory.getGeneratedNameForNode(node);
+
+            if (node.exportClause && isNamedExports(node.exportClause)) {
                 const statements: Statement[] = [];
                 // export { x, y } from "mod";
                 if (moduleKind !== ModuleKind.AMD) {
                     statements.push(
-                        createVariableStatement(
-                            /*modifiers*/ undefined,
-                            createVariableDeclarationList([
-                                createVariableDeclaration(
-                                    generatedName,
-                                    /*type*/ undefined,
-                                    createRequireCall(node)
-                                )
-                            ]),
-                            /*location*/ node
+                        setOriginalNode(
+                            setTextRange(
+                                factory.createVariableStatement(
+                                    /*modifiers*/ undefined,
+                                    factory.createVariableDeclarationList([
+                                        factory.createVariableDeclaration(
+                                            generatedName,
+                                            /*exclamationToken*/ undefined,
+                                            /*type*/ undefined,
+                                            createRequireCall(node)
+                                        )
+                                    ])
+                                ),
+                                /*location*/ node),
+                            /* original */ node
                         )
                     );
                 }
                 for (const specifier of node.exportClause.elements) {
-                    const exportedValue = createPropertyAccess(
-                        generatedName,
-                        specifier.propertyName || specifier.name
-                    );
-                    statements.push(
-                        createStatement(
-                            createExportAssignment(specifier.name, exportedValue),
-                            /*location*/ specifier
-                        )
-                    );
+                    if (languageVersion === ScriptTarget.ES3) {
+                        statements.push(
+                            setOriginalNode(
+                                setTextRange(
+                                    factory.createExpressionStatement(
+                                        emitHelpers().createCreateBindingHelper(generatedName, factory.createStringLiteralFromNode(specifier.propertyName || specifier.name), specifier.propertyName ? factory.createStringLiteralFromNode(specifier.name) : undefined)
+                                    ),
+                                    specifier),
+                                specifier
+                            )
+                        );
+                    }
+                    else {
+                        const exportNeedsImportDefault =
+                            !!compilerOptions.esModuleInterop &&
+                            !(getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) &&
+                            idText(specifier.propertyName || specifier.name) === "default";
+                        const exportedValue = factory.createPropertyAccessExpression(
+                            exportNeedsImportDefault ? emitHelpers().createImportDefaultHelper(generatedName) : generatedName,
+                            specifier.propertyName || specifier.name);
+                        statements.push(
+                            setOriginalNode(
+                                setTextRange(
+                                    factory.createExpressionStatement(
+                                        createExportExpression(factory.getExportName(specifier), exportedValue, /* location */ undefined, /* liveBinding */ true)
+                                    ),
+                                    specifier),
+                                specifier
+                            )
+                        );
+                    }
                 }
+
+                return singleOrMany(statements);
+            }
+            else if (node.exportClause) {
+                const statements: Statement[] = [];
+                // export * as ns from "mod";
+                // export * as default from "mod";
+                statements.push(
+                    setOriginalNode(
+                        setTextRange(
+                            factory.createExpressionStatement(
+                                createExportExpression(
+                                    factory.cloneNode(node.exportClause.name),
+                                    getHelperExpressionForExport(node, moduleKind !== ModuleKind.AMD ?
+                                        createRequireCall(node) :
+                                        isExportNamespaceAsDefaultDeclaration(node) ? generatedName :
+                                            factory.createIdentifier(idText(node.exportClause.name)))
+                                )
+                            ),
+                            node
+                        ),
+                        node
+                    )
+                );
 
                 return singleOrMany(statements);
             }
             else {
                 // export * from "mod";
-                return createStatement(
-                    createCall(
-                        createIdentifier("__export"),
-                        /*typeArguments*/ undefined,
-                        [
-                            moduleKind !== ModuleKind.AMD
-                                ? createRequireCall(node)
-                                : generatedName
-                        ]
-                    ),
-                    /*location*/ node
-                );
-            }
-        }
-
-        function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
-            if (node.isExportEquals) {
-                // Elide as `export=` is handled in addExportEqualsIfNeeded
-                return undefined;
-            }
-
-            const statements: Statement[] = [];
-            addExportDefault(statements, node.expression, /*location*/ node);
-            return statements;
-        }
-
-        function addExportDefault(statements: Statement[], expression: Expression, location: TextRange): void {
-            tryAddExportDefaultCompat(statements);
-
-            statements.push(
-                createStatement(
-                    createExportAssignment(
-                        createIdentifier("default"),
-                        expression
-                    ),
-                    location
-                )
-            );
-        }
-
-        function tryAddExportDefaultCompat(statements: Statement[]) {
-            const original = getOriginalNode(currentSourceFile);
-            Debug.assert(original.kind === SyntaxKind.SourceFile);
-
-            if (!original.symbol.exports["___esModule"]) {
-                if (languageVersion === ScriptTarget.ES3) {
-                    statements.push(
-                        createStatement(
-                            createExportAssignment(
-                                createIdentifier("__esModule"),
-                                createLiteral(true)
-                            )
-                        )
-                    );
-                }
-                else {
-                    statements.push(
-                        createStatement(
-                            createCall(
-                                createPropertyAccess(createIdentifier("Object"), "defineProperty"),
-                                /*typeArguments*/ undefined,
-                                [
-                                    createIdentifier("exports"),
-                                    createLiteral("__esModule"),
-                                    createObjectLiteral([
-                                        createPropertyAssignment("value", createLiteral(true))
-                                    ])
-                                ]
-                            )
-                        )
-                    );
-                }
-            }
-        }
-
-        function addExportImportAssignments(statements: Statement[], node: ImportEqualsDeclaration | ImportDeclaration) {
-            if (isImportEqualsDeclaration(node)) {
-                addExportMemberAssignments(statements, node.name);
-            }
-            else {
-                const names = reduceEachChild(node, collectExportMembers, []);
-                for (const name of names) {
-                    addExportMemberAssignments(statements, name);
-                }
-            }
-        }
-
-        function collectExportMembers(names: Identifier[], node: Node): Identifier[] {
-            if (isAliasSymbolDeclaration(node) && isDeclaration(node)) {
-                const name = node.name;
-                if (isIdentifier(name)) {
-                    names.push(name);
-                }
-            }
-
-            return reduceEachChild(node, collectExportMembers, names);
-        }
-
-        function addExportMemberAssignments(statements: Statement[], name: Identifier): void {
-            if (!exportEquals && exportSpecifiers && hasProperty(exportSpecifiers, name.text)) {
-                for (const specifier of exportSpecifiers[name.text]) {
-                    statements.push(
-                        startOnNewLine(
-                            createStatement(
-                                createExportAssignment(specifier.name, name),
-                                /*location*/ specifier.name
-                            )
-                        )
-                    );
-                }
-            }
-        }
-
-        function addExportMemberAssignment(statements: Statement[], node: DeclarationStatement) {
-            if (hasModifier(node, ModifierFlags.Default)) {
-                addExportDefault(statements, getDeclarationName(node), /*location*/ node);
-            }
-            else {
-                statements.push(
-                    createExportStatement(<Identifier>node.name, setEmitFlags(getSynthesizedClone(node.name), EmitFlags.LocalName), /*location*/ node)
-                );
-            }
-        }
-
-        function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
-            // If the variable is for a generated declaration,
-            // we should maintain it and just strip off the 'export' modifier if necessary.
-            const originalKind = getOriginalNode(node).kind;
-            if (originalKind === SyntaxKind.ModuleDeclaration ||
-                originalKind === SyntaxKind.EnumDeclaration ||
-                originalKind === SyntaxKind.ClassDeclaration) {
-
-                if (!hasModifier(node, ModifierFlags.Export)) {
-                    return node;
-                }
-
                 return setOriginalNode(
-                    createVariableStatement(
-                        /*modifiers*/ undefined,
-                        node.declarationList
-                    ),
+                    setTextRange(
+                        factory.createExpressionStatement(
+                            emitHelpers().createExportStarHelper(moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)
+                        ),
+                        node),
                     node
                 );
             }
-
-            const resultStatements: Statement[] = [];
-
-            // If we're exporting these variables, then these just become assignments to 'exports.blah'.
-            // We only want to emit assignments for variables with initializers.
-            if (hasModifier(node, ModifierFlags.Export)) {
-                const variables = getInitializedVariables(node.declarationList);
-                if (variables.length > 0) {
-                    const inlineAssignments = createStatement(
-                        inlineExpressions(
-                            map(variables, transformInitializedVariable)
-                        ),
-                        node
-                    );
-                    resultStatements.push(inlineAssignments);
-                }
-            }
-            else {
-                resultStatements.push(node);
-            }
-
-            // While we might not have been exported here, each variable might have been exported
-            // later on in an export specifier (e.g. `export {foo as blah, bar}`).
-            for (const decl of node.declarationList.declarations) {
-                addExportMemberAssignmentsForBindingName(resultStatements, decl.name);
-            }
-
-            return resultStatements;
         }
 
         /**
-         * Creates appropriate assignments for each binding identifier that is exported in an export specifier,
-         * and inserts it into 'resultStatements'.
+         * Visits an ExportAssignment node.
+         *
+         * @param node The node to visit.
          */
-        function addExportMemberAssignmentsForBindingName(resultStatements: Statement[], name: BindingName): void {
-            if (isBindingPattern(name)) {
-                for (const element of name.elements) {
-                    if (!isOmittedExpression(element)) {
-                        addExportMemberAssignmentsForBindingName(resultStatements, element.name);
-                    }
-                }
+        function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
+            if (node.isExportEquals) {
+                return undefined;
+            }
+
+            let statements: Statement[] | undefined;
+            const original = node.original;
+            if (original && hasAssociatedEndOfDeclarationMarker(original)) {
+                // Defer exports until we encounter an EndOfDeclarationMarker node
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportStatement(deferredExports[id], factory.createIdentifier("default"), visitNode(node.expression, moduleExpressionElementVisitor), /*location*/ node, /*allowComments*/ true);
             }
             else {
-                if (!exportEquals && exportSpecifiers && hasProperty(exportSpecifiers, name.text)) {
-                    const sourceFileId = getOriginalNodeId(currentSourceFile);
-                    if (!bindingNameExportSpecifiersForFileMap[sourceFileId]) {
-                        bindingNameExportSpecifiersForFileMap[sourceFileId] = createMap<ExportSpecifier[]>();
-                    }
-                    bindingNameExportSpecifiersForFileMap[sourceFileId][name.text] = exportSpecifiers[name.text];
-                    addExportMemberAssignments(resultStatements, name);
-                }
+                statements = appendExportStatement(statements, factory.createIdentifier("default"), visitNode(node.expression, moduleExpressionElementVisitor), /*location*/ node, /*allowComments*/ true);
             }
+
+            return singleOrMany(statements);
         }
 
-        function transformInitializedVariable(node: VariableDeclaration): Expression {
-            const name = node.name;
-            if (isBindingPattern(name)) {
-                return flattenVariableDestructuringToExpression(
-                    context,
-                    node,
-                    hoistVariableDeclaration,
-                    getModuleMemberName,
-                    visitor
-                );
-            }
-            else {
-                return createAssignment(
-                    getModuleMemberName(name),
-                    visitNode(node.initializer, visitor, isExpression)
-                );
-            }
-        }
-
+        /**
+         * Visits a FunctionDeclaration node.
+         *
+         * @param node The node to visit.
+         */
         function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
-            const statements: Statement[] = [];
-            const name = node.name || getGeneratedNameForNode(node);
-            if (hasModifier(node, ModifierFlags.Export)) {
-                // Keep async modifier for ES2017 transformer
-                const isAsync = hasModifier(node, ModifierFlags.Async);
-                statements.push(
+            let statements: Statement[] | undefined;
+            if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+                statements = append(statements,
                     setOriginalNode(
-                        createFunctionDeclaration(
-                            /*decorators*/ undefined,
-                            isAsync ? [<Modifier>createNode(SyntaxKind.AsyncKeyword)] : undefined,
-                            node.asteriskToken,
-                            name,
-                            /*typeParameters*/ undefined,
-                            node.parameters,
-                            /*type*/ undefined,
-                            node.body,
+                        setTextRange(
+                            factory.createFunctionDeclaration(
+                                /*decorators*/ undefined,
+                                visitNodes(node.modifiers, modifierVisitor, isModifier),
+                                node.asteriskToken,
+                                factory.getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
+                                /*typeParameters*/ undefined,
+                                visitNodes(node.parameters, moduleExpressionElementVisitor),
+                                /*type*/ undefined,
+                                visitEachChild(node.body, moduleExpressionElementVisitor, context)
+                            ),
                             /*location*/ node
                         ),
                         /*original*/ node
                     )
                 );
-
-                addExportMemberAssignment(statements, node);
             }
             else {
-                statements.push(node);
+                statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
             }
 
-            if (node.name) {
-                addExportMemberAssignments(statements, node.name);
+            if (hasAssociatedEndOfDeclarationMarker(node)) {
+                // Defer exports until we encounter an EndOfDeclarationMarker node
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportsOfHoistedDeclaration(deferredExports[id], node);
+            }
+            else {
+                statements = appendExportsOfHoistedDeclaration(statements, node);
             }
 
             return singleOrMany(statements);
         }
 
+        /**
+         * Visits a ClassDeclaration node.
+         *
+         * @param node The node to visit.
+         */
         function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
-            const statements: Statement[] = [];
-            const name = node.name || getGeneratedNameForNode(node);
-            if (hasModifier(node, ModifierFlags.Export)) {
-                statements.push(
+            let statements: Statement[] | undefined;
+            if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+                statements = append(statements,
                     setOriginalNode(
-                        createClassDeclaration(
-                            /*decorators*/ undefined,
-                            /*modifiers*/ undefined,
-                            name,
-                            /*typeParameters*/ undefined,
-                            node.heritageClauses,
-                            node.members,
-                            /*location*/ node
+                        setTextRange(
+                            factory.createClassDeclaration(
+                                /*decorators*/ undefined,
+                                visitNodes(node.modifiers, modifierVisitor, isModifier),
+                                factory.getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
+                                /*typeParameters*/ undefined,
+                                visitNodes(node.heritageClauses, moduleExpressionElementVisitor),
+                                visitNodes(node.members, moduleExpressionElementVisitor)
+                            ),
+                            node
                         ),
-                        /*original*/ node
+                        node
                     )
                 );
-
-                addExportMemberAssignment(statements, node);
             }
             else {
-                statements.push(node);
+                statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
             }
 
-            // Decorators end up creating a series of assignment expressions which overwrite
-            // the local binding that we export, so we need to defer from exporting decorated classes
-            // until the decoration assignments take place. We do this when visiting expression-statements.
-            if (node.name && !(node.decorators && node.decorators.length)) {
-                addExportMemberAssignments(statements, node.name);
+            if (hasAssociatedEndOfDeclarationMarker(node)) {
+                // Defer exports until we encounter an EndOfDeclarationMarker node
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportsOfHoistedDeclaration(deferredExports[id], node);
+            }
+            else {
+                statements = appendExportsOfHoistedDeclaration(statements, node);
             }
 
             return singleOrMany(statements);
         }
 
-        function visitExpressionStatement(node: ExpressionStatement): VisitResult<Statement> {
-            const original = getOriginalNode(node);
-            const origKind = original.kind;
+        /**
+         * Visits a VariableStatement node.
+         *
+         * @param node The node to visit.
+         */
+        function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
+            let statements: Statement[] | undefined;
+            let variables: VariableDeclaration[] | undefined;
+            let expressions: Expression[] | undefined;
 
-            if (origKind === SyntaxKind.EnumDeclaration || origKind === SyntaxKind.ModuleDeclaration) {
-                return visitExpressionStatementForEnumOrNamespaceDeclaration(node, <EnumDeclaration | ModuleDeclaration>original);
-            }
-            else if (origKind === SyntaxKind.ClassDeclaration) {
-                // The decorated assignment for a class name may need to be transformed.
-                const classDecl = original as ClassDeclaration;
-                if (classDecl.name) {
-                    const statements = [node];
-                    addExportMemberAssignments(statements, classDecl.name);
-                    return statements;
+            if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+                let modifiers: NodeArray<Modifier> | undefined;
+                let removeCommentsOnExpressions = false;
+
+                // If we're exporting these variables, then these just become assignments to 'exports.x'.
+                for (const variable of node.declarationList.declarations) {
+                    if (isIdentifier(variable.name) && isLocalName(variable.name)) {
+                        if (!modifiers) {
+                            modifiers = visitNodes(node.modifiers, modifierVisitor, isModifier);
+                        }
+
+                        variables = append(variables, variable);
+                    }
+                    else if (variable.initializer) {
+                        if (!isBindingPattern(variable.name) && (isArrowFunction(variable.initializer) || isFunctionExpression(variable.initializer) || isClassExpression(variable.initializer))) {
+                            const expression = factory.createAssignment(
+                                setTextRange(
+                                    factory.createPropertyAccessExpression(
+                                        factory.createIdentifier("exports"),
+                                        variable.name
+                                    ),
+                                    /*location*/ variable.name
+                                ),
+                                factory.createIdentifier(getTextOfIdentifierOrLiteral(variable.name))
+                            );
+                            const updatedVariable = factory.createVariableDeclaration(
+                                variable.name,
+                                variable.exclamationToken,
+                                variable.type,
+                                visitNode(variable.initializer, moduleExpressionElementVisitor)
+                            );
+
+                            variables = append(variables, updatedVariable);
+                            expressions = append(expressions, expression);
+                            removeCommentsOnExpressions = true;
+                        }
+                        else {
+                            expressions = append(expressions, transformInitializedVariable(variable as InitializedVariableDeclaration));
+                        }
+                    }
                 }
+
+                if (variables) {
+                    statements = append(statements, factory.updateVariableStatement(node, modifiers, factory.updateVariableDeclarationList(node.declarationList, variables)));
+                }
+
+                if (expressions) {
+                    const statement = setOriginalNode(setTextRange(factory.createExpressionStatement(factory.inlineExpressions(expressions)), node), node);
+                    if (removeCommentsOnExpressions) {
+                        removeAllComments(statement);
+                    }
+                    statements = append(statements, statement);
+                }
+            }
+            else {
+                statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
+            }
+
+            if (hasAssociatedEndOfDeclarationMarker(node)) {
+                // Defer exports until we encounter an EndOfDeclarationMarker node
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], node);
+            }
+            else {
+                statements = appendExportsOfVariableStatement(statements, node);
+            }
+
+            return singleOrMany(statements);
+        }
+
+        function createAllExportExpressions(name: Identifier, value: Expression, location?: TextRange) {
+            const exportedNames = getExports(name);
+            if (exportedNames) {
+                // For each additional export of the declaration, apply an export assignment.
+                let expression: Expression = isExportName(name) ? value : factory.createAssignment(name, value);
+                for (const exportName of exportedNames) {
+                    // Mark the node to prevent triggering substitution.
+                    setEmitFlags(expression, EmitFlags.NoSubstitution);
+                    expression = createExportExpression(exportName, expression, /*location*/ location);
+                }
+
+                return expression;
+            }
+            return factory.createAssignment(name, value);
+        }
+
+        /**
+         * Transforms an exported variable with an initializer into an expression.
+         *
+         * @param node The node to transform.
+         */
+        function transformInitializedVariable(node: InitializedVariableDeclaration): Expression {
+            if (isBindingPattern(node.name)) {
+                return flattenDestructuringAssignment(
+                    visitNode(node, moduleExpressionElementVisitor),
+                    /*visitor*/ undefined,
+                    context,
+                    FlattenLevel.All,
+                    /*needsValue*/ false,
+                    createAllExportExpressions
+                );
+            }
+            else {
+                return factory.createAssignment(
+                    setTextRange(
+                        factory.createPropertyAccessExpression(
+                            factory.createIdentifier("exports"),
+                            node.name
+                        ),
+                        /*location*/ node.name
+                    ),
+                    node.initializer ? visitNode(node.initializer, moduleExpressionElementVisitor) : factory.createVoidZero()
+                );
+            }
+        }
+
+        /**
+         * Visits a MergeDeclarationMarker used as a placeholder for the beginning of a merged
+         * and transformed declaration.
+         *
+         * @param node The node to visit.
+         */
+        function visitMergeDeclarationMarker(node: MergeDeclarationMarker): VisitResult<Statement> {
+            // For an EnumDeclaration or ModuleDeclaration that merges with a preceeding
+            // declaration we do not emit a leading variable declaration. To preserve the
+            // begin/end semantics of the declararation and to properly handle exports
+            // we wrapped the leading variable declaration in a `MergeDeclarationMarker`.
+            //
+            // To balance the declaration, add the exports of the elided variable
+            // statement.
+            if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === SyntaxKind.VariableStatement) {
+                const id = getOriginalNodeId(node);
+                deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <VariableStatement>node.original);
             }
 
             return node;
         }
 
-        function visitExpressionStatementForEnumOrNamespaceDeclaration(node: ExpressionStatement, original: EnumDeclaration | ModuleDeclaration): VisitResult<Statement> {
-            const statements: Statement[] = [node];
+        /**
+         * Determines whether a node has an associated EndOfDeclarationMarker.
+         *
+         * @param node The node to test.
+         */
+        function hasAssociatedEndOfDeclarationMarker(node: Node) {
+            return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
+        }
 
-            // Preserve old behavior for enums in which a variable statement is emitted after the body itself.
-            if (hasModifier(original, ModifierFlags.Export) &&
-                original.kind === SyntaxKind.EnumDeclaration &&
-                isFirstDeclarationOfKind(original, SyntaxKind.EnumDeclaration)) {
-                addVarForExportedEnumOrNamespaceDeclaration(statements, original);
+        /**
+         * Visits a DeclarationMarker used as a placeholder for the end of a transformed
+         * declaration.
+         *
+         * @param node The node to visit.
+         */
+        function visitEndOfDeclarationMarker(node: EndOfDeclarationMarker): VisitResult<Statement> {
+            // For some transformations we emit an `EndOfDeclarationMarker` to mark the actual
+            // end of the transformed declaration. We use this marker to emit any deferred exports
+            // of the declaration.
+            const id = getOriginalNodeId(node);
+            const statements = deferredExports[id];
+            if (statements) {
+                delete deferredExports[id];
+                return append(statements, node);
             }
 
-            addExportMemberAssignments(statements, <Identifier>original.name);
+            return node;
+        }
+
+        /**
+         * Appends the exports of an ImportDeclaration to a statement list, returning the
+         * statement list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param decl The declaration whose exports are to be recorded.
+         */
+        function appendExportsOfImportDeclaration(statements: Statement[] | undefined, decl: ImportDeclaration): Statement[] | undefined {
+            if (currentModuleInfo.exportEquals) {
+                return statements;
+            }
+
+            const importClause = decl.importClause;
+            if (!importClause) {
+                return statements;
+            }
+
+            if (importClause.name) {
+                statements = appendExportsOfDeclaration(statements, importClause);
+            }
+
+            const namedBindings = importClause.namedBindings;
+            if (namedBindings) {
+                switch (namedBindings.kind) {
+                    case SyntaxKind.NamespaceImport:
+                        statements = appendExportsOfDeclaration(statements, namedBindings);
+                        break;
+
+                    case SyntaxKind.NamedImports:
+                        for (const importBinding of namedBindings.elements) {
+                            statements = appendExportsOfDeclaration(statements, importBinding, /* liveBinding */ true);
+                        }
+
+                        break;
+                }
+            }
 
             return statements;
         }
 
         /**
-         * Adds a trailing VariableStatement for an enum or module declaration.
+         * Appends the exports of an ImportEqualsDeclaration to a statement list, returning the
+         * statement list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param decl The declaration whose exports are to be recorded.
          */
-        function addVarForExportedEnumOrNamespaceDeclaration(statements: Statement[], node: EnumDeclaration | ModuleDeclaration) {
-            const transformedStatement = createVariableStatement(
-                /*modifiers*/ undefined,
-                [createVariableDeclaration(
-                    getDeclarationName(node),
-                        /*type*/ undefined,
-                    createPropertyAccess(createIdentifier("exports"), getDeclarationName(node))
-                )],
-                    /*location*/ node
-            );
-            setEmitFlags(transformedStatement, EmitFlags.NoComments);
-            statements.push(transformedStatement);
+        function appendExportsOfImportEqualsDeclaration(statements: Statement[] | undefined, decl: ImportEqualsDeclaration): Statement[] | undefined {
+            if (currentModuleInfo.exportEquals) {
+                return statements;
+            }
+
+            return appendExportsOfDeclaration(statements, decl);
         }
 
-        function getDeclarationName(node: DeclarationStatement) {
-            return node.name ? getSynthesizedClone(<Identifier>node.name) : getGeneratedNameForNode(node);
+        /**
+         * Appends the exports of a VariableStatement to a statement list, returning the statement
+         * list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param node The VariableStatement whose exports are to be recorded.
+         */
+        function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement): Statement[] | undefined {
+            if (currentModuleInfo.exportEquals) {
+                return statements;
+            }
+
+            for (const decl of node.declarationList.declarations) {
+                statements = appendExportsOfBindingElement(statements, decl);
+            }
+
+            return statements;
         }
 
-        function onEmitNode(emitContext: EmitContext, node: Node, emitCallback: (emitContext: EmitContext, node: Node) => void): void {
-            if (node.kind === SyntaxKind.SourceFile) {
-                bindingNameExportSpecifiersMap = bindingNameExportSpecifiersForFileMap[getOriginalNodeId(node)];
-                previousOnEmitNode(emitContext, node, emitCallback);
-                bindingNameExportSpecifiersMap = undefined;
+        /**
+         * Appends the exports of a VariableDeclaration or BindingElement to a statement list,
+         * returning the statement list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param decl The declaration whose exports are to be recorded.
+         */
+        function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElement): Statement[] | undefined {
+            if (currentModuleInfo.exportEquals) {
+                return statements;
+            }
+
+            if (isBindingPattern(decl.name)) {
+                for (const element of decl.name.elements) {
+                    if (!isOmittedExpression(element)) {
+                        statements = appendExportsOfBindingElement(statements, element);
+                    }
+                }
+            }
+            else if (!isGeneratedIdentifier(decl.name)) {
+                statements = appendExportsOfDeclaration(statements, decl);
+            }
+
+            return statements;
+        }
+
+        /**
+         * Appends the exports of a ClassDeclaration or FunctionDeclaration to a statement list,
+         * returning the statement list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param decl The declaration whose exports are to be recorded.
+         */
+        function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
+            if (currentModuleInfo.exportEquals) {
+                return statements;
+            }
+
+            if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
+                const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? factory.createIdentifier("default") : factory.getDeclarationName(decl);
+                statements = appendExportStatement(statements, exportName, factory.getLocalName(decl), /*location*/ decl);
+            }
+
+            if (decl.name) {
+                statements = appendExportsOfDeclaration(statements, decl);
+            }
+
+            return statements;
+        }
+
+        /**
+         * Appends the exports of a declaration to a statement list, returning the statement list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param decl The declaration to export.
+         */
+        function appendExportsOfDeclaration(statements: Statement[] | undefined, decl: Declaration, liveBinding?: boolean): Statement[] | undefined {
+            const name = factory.getDeclarationName(decl);
+            const exportSpecifiers = currentModuleInfo.exportSpecifiers.get(idText(name));
+            if (exportSpecifiers) {
+                for (const exportSpecifier of exportSpecifiers) {
+                    statements = appendExportStatement(statements, exportSpecifier.name, name, /*location*/ exportSpecifier.name, /* allowComments */ undefined, liveBinding);
+                }
+            }
+            return statements;
+        }
+
+        /**
+         * Appends the down-level representation of an export to a statement list, returning the
+         * statement list.
+         *
+         * @param statements A statement list to which the down-level export statements are to be
+         * appended. If `statements` is `undefined`, a new array is allocated if statements are
+         * appended.
+         * @param exportName The name of the export.
+         * @param expression The expression to export.
+         * @param location The location to use for source maps and comments for the export.
+         * @param allowComments Whether to allow comments on the export.
+         */
+        function appendExportStatement(statements: Statement[] | undefined, exportName: Identifier, expression: Expression, location?: TextRange, allowComments?: boolean, liveBinding?: boolean): Statement[] | undefined {
+            statements = append(statements, createExportStatement(exportName, expression, location, allowComments, liveBinding));
+            return statements;
+        }
+
+        function createUnderscoreUnderscoreESModule() {
+            let statement: Statement;
+            if (languageVersion === ScriptTarget.ES3) {
+                statement = factory.createExpressionStatement(
+                    createExportExpression(
+                        factory.createIdentifier("__esModule"),
+                        factory.createTrue()
+                    )
+                );
             }
             else {
-                previousOnEmitNode(emitContext, node, emitCallback);
+                statement = factory.createExpressionStatement(
+                    factory.createCallExpression(
+                        factory.createPropertyAccessExpression(factory.createIdentifier("Object"), "defineProperty"),
+                        /*typeArguments*/ undefined,
+                        [
+                            factory.createIdentifier("exports"),
+                            factory.createStringLiteral("__esModule"),
+                            factory.createObjectLiteralExpression([
+                                factory.createPropertyAssignment("value", factory.createTrue())
+                            ])
+                        ]
+                    )
+                );
+            }
+            setEmitFlags(statement, EmitFlags.CustomPrologue);
+            return statement;
+        }
+
+        /**
+         * Creates a call to the current file's export function to export a value.
+         *
+         * @param name The bound name of the export.
+         * @param value The exported value.
+         * @param location The location to use for source maps and comments for the export.
+         * @param allowComments An optional value indicating whether to emit comments for the statement.
+         */
+        function createExportStatement(name: Identifier, value: Expression, location?: TextRange, allowComments?: boolean, liveBinding?: boolean) {
+            const statement = setTextRange(factory.createExpressionStatement(createExportExpression(name, value, /* location */ undefined, liveBinding)), location);
+            startOnNewLine(statement);
+            if (!allowComments) {
+                setEmitFlags(statement, EmitFlags.NoComments);
+            }
+
+            return statement;
+        }
+
+        /**
+         * Creates a call to the current file's export function to export a value.
+         *
+         * @param name The bound name of the export.
+         * @param value The exported value.
+         * @param location The location to use for source maps and comments for the export.
+         */
+        function createExportExpression(name: Identifier, value: Expression, location?: TextRange, liveBinding?: boolean) {
+            return setTextRange(
+                liveBinding && languageVersion !== ScriptTarget.ES3 ? factory.createCallExpression(
+                    factory.createPropertyAccessExpression(
+                        factory.createIdentifier("Object"),
+                        "defineProperty"
+                    ),
+                    /*typeArguments*/ undefined,
+                    [
+                        factory.createIdentifier("exports"),
+                        factory.createStringLiteralFromNode(name),
+                        factory.createObjectLiteralExpression([
+                            factory.createPropertyAssignment("enumerable", factory.createTrue()),
+                            factory.createPropertyAssignment("get", factory.createFunctionExpression(
+                                /*modifiers*/ undefined,
+                                /*asteriskToken*/ undefined,
+                                /*name*/ undefined,
+                                /*typeParameters*/ undefined,
+                                /*parameters*/ [],
+                                /*type*/ undefined,
+                                factory.createBlock([factory.createReturnStatement(value)])
+                            ))
+                        ])
+                    ]
+                ) : factory.createAssignment(
+                    factory.createPropertyAccessExpression(
+                        factory.createIdentifier("exports"),
+                        factory.cloneNode(name)
+                    ),
+                    value
+                ),
+                location
+            );
+        }
+
+        //
+        // Modifier Visitors
+        //
+
+        /**
+         * Visit nodes to elide module-specific modifiers.
+         *
+         * @param node The node to visit.
+         */
+        function modifierVisitor(node: Node): VisitResult<Node> {
+            // Elide module-specific modifiers.
+            switch (node.kind) {
+                case SyntaxKind.ExportKeyword:
+                case SyntaxKind.DefaultKeyword:
+                    return undefined;
+            }
+
+            return node;
+        }
+
+        //
+        // Emit Notification
+        //
+
+        /**
+         * Hook for node emit notifications.
+         *
+         * @param hint A hint as to the intended usage of the node.
+         * @param node The node to emit.
+         * @param emit A callback used to emit the node in the printer.
+         */
+        function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+            if (node.kind === SyntaxKind.SourceFile) {
+                currentSourceFile = <SourceFile>node;
+                currentModuleInfo = moduleInfoMap[getOriginalNodeId(currentSourceFile)];
+                noSubstitution = [];
+
+                previousOnEmitNode(hint, node, emitCallback);
+
+                currentSourceFile = undefined!;
+                currentModuleInfo = undefined!;
+                noSubstitution = undefined!;
+            }
+            else {
+                previousOnEmitNode(hint, node, emitCallback);
             }
         }
+
+        //
+        // Substitutions
+        //
 
         /**
          * Hooks node substitutions.
          *
+         * @param hint A hint as to the intended usage of the node.
          * @param node The node to substitute.
-         * @param isExpression A value indicating whether the node is to be used in an expression
-         *                     position.
          */
-        function onSubstituteNode(emitContext: EmitContext, node: Node) {
-            node = previousOnSubstituteNode(emitContext, node);
-            if (emitContext === EmitContext.Expression) {
+        function onSubstituteNode(hint: EmitHint, node: Node) {
+            node = previousOnSubstituteNode(hint, node);
+            if (node.id && noSubstitution[node.id]) {
+                return node;
+            }
+
+            if (hint === EmitHint.Expression) {
                 return substituteExpression(<Expression>node);
             }
             else if (isShorthandPropertyAssignment(node)) {
                 return substituteShorthandPropertyAssignment(node);
             }
+
             return node;
         }
 
+        /**
+         * Substitution for a ShorthandPropertyAssignment whose declaration name is an imported
+         * or exported symbol.
+         *
+         * @param node The node to substitute.
+         */
         function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment): ObjectLiteralElementLike {
             const name = node.name;
             const exportedOrImportedName = substituteExpressionIdentifier(name);
@@ -858,14 +1723,19 @@ namespace ts {
                 // A shorthand property with an assignment initializer is probably part of a
                 // destructuring assignment
                 if (node.objectAssignmentInitializer) {
-                    const initializer = createAssignment(exportedOrImportedName, node.objectAssignmentInitializer);
-                    return createPropertyAssignment(name, initializer, /*location*/ node);
+                    const initializer = factory.createAssignment(exportedOrImportedName, node.objectAssignmentInitializer);
+                    return setTextRange(factory.createPropertyAssignment(name, initializer), node);
                 }
-                return createPropertyAssignment(name, exportedOrImportedName, /*location*/ node);
+                return setTextRange(factory.createPropertyAssignment(name, exportedOrImportedName), node);
             }
             return node;
         }
 
+        /**
+         * Substitution for an Expression that may contain an imported or exported symbol.
+         *
+         * @param node The node to substitute.
+         */
         function substituteExpression(node: Expression) {
             switch (node.kind) {
                 case SyntaxKind.Identifier:
@@ -880,220 +1750,166 @@ namespace ts {
             return node;
         }
 
+        /**
+         * Substitution for an Identifier expression that may contain an imported or exported
+         * symbol.
+         *
+         * @param node The node to substitute.
+         */
         function substituteExpressionIdentifier(node: Identifier): Expression {
-            return trySubstituteExportedName(node)
-                || trySubstituteImportedName(node)
-                || node;
+            if (getEmitFlags(node) & EmitFlags.HelperName) {
+                const externalHelpersModuleName = getExternalHelpersModuleName(currentSourceFile);
+                if (externalHelpersModuleName) {
+                    return factory.createPropertyAccessExpression(externalHelpersModuleName, node);
+                }
+
+                return node;
+            }
+
+            if (!(isGeneratedIdentifier(node) && !(node.autoGenerateFlags & GeneratedIdentifierFlags.AllowNameSubstitution)) && !isLocalName(node)) {
+                const exportContainer = resolver.getReferencedExportContainer(node, isExportName(node));
+                if (exportContainer && exportContainer.kind === SyntaxKind.SourceFile) {
+                    return setTextRange(
+                        factory.createPropertyAccessExpression(
+                            factory.createIdentifier("exports"),
+                            factory.cloneNode(node)
+                        ),
+                        /*location*/ node
+                    );
+                }
+
+                const importDeclaration = resolver.getReferencedImportDeclaration(node);
+                if (importDeclaration) {
+                    if (isImportClause(importDeclaration)) {
+                        return setTextRange(
+                            factory.createPropertyAccessExpression(
+                                factory.getGeneratedNameForNode(importDeclaration.parent),
+                                factory.createIdentifier("default")
+                            ),
+                            /*location*/ node
+                        );
+                    }
+                    else if (isImportSpecifier(importDeclaration)) {
+                        const name = importDeclaration.propertyName || importDeclaration.name;
+                        return setTextRange(
+                            factory.createPropertyAccessExpression(
+                                factory.getGeneratedNameForNode(importDeclaration.parent?.parent?.parent || importDeclaration),
+                                factory.cloneNode(name)
+                            ),
+                            /*location*/ node
+                        );
+                    }
+                }
+            }
+            return node;
         }
 
+        /**
+         * Substitution for a BinaryExpression that may contain an imported or exported symbol.
+         *
+         * @param node The node to substitute.
+         */
         function substituteBinaryExpression(node: BinaryExpression): Expression {
-            const left = node.left;
-            // If the left-hand-side of the binaryExpression is an identifier and its is export through export Specifier
-            if (isIdentifier(left) && isAssignmentOperator(node.operatorToken.kind)) {
-                if (bindingNameExportSpecifiersMap && hasProperty(bindingNameExportSpecifiersMap, left.text)) {
-                    setEmitFlags(node, EmitFlags.NoSubstitution);
-                    let nestedExportAssignment: BinaryExpression;
-                    for (const specifier of bindingNameExportSpecifiersMap[left.text]) {
-                        nestedExportAssignment = nestedExportAssignment ?
-                            createExportAssignment(specifier.name, nestedExportAssignment) :
-                            createExportAssignment(specifier.name, node);
+            // When we see an assignment expression whose left-hand side is an exported symbol,
+            // we should ensure all exports of that symbol are updated with the correct value.
+            //
+            // - We do not substitute generated identifiers for any reason.
+            // - We do not substitute identifiers tagged with the LocalName flag.
+            // - We do not substitute identifiers that were originally the name of an enum or
+            //   namespace due to how they are transformed in TypeScript.
+            // - We only substitute identifiers that are exported at the top level.
+            if (isAssignmentOperator(node.operatorToken.kind)
+                && isIdentifier(node.left)
+                && !isGeneratedIdentifier(node.left)
+                && !isLocalName(node.left)
+                && !isDeclarationNameOfEnumOrNamespace(node.left)) {
+                const exportedNames = getExports(node.left);
+                if (exportedNames) {
+                    // For each additional export of the declaration, apply an export assignment.
+                    let expression: Expression = node;
+                    for (const exportName of exportedNames) {
+                        // Mark the node to prevent triggering this rule again.
+                        noSubstitution[getNodeId(expression)] = true;
+                        expression = createExportExpression(exportName, expression, /*location*/ node);
                     }
-                    return nestedExportAssignment;
+
+                    return expression;
                 }
             }
+
             return node;
         }
 
+        /**
+         * Substitution for a UnaryExpression that may contain an imported or exported symbol.
+         *
+         * @param node The node to substitute.
+         */
         function substituteUnaryExpression(node: PrefixUnaryExpression | PostfixUnaryExpression): Expression {
-            // Because how the compiler only parse plusplus and minusminus to be either prefixUnaryExpression or postFixUnaryExpression depended on where they are
-            // We don't need to check that the operator has SyntaxKind.plusplus or SyntaxKind.minusminus
-            const operator = node.operator;
-            const operand = node.operand;
-            if (isIdentifier(operand) && bindingNameExportSpecifiersForFileMap) {
-                if (bindingNameExportSpecifiersMap && hasProperty(bindingNameExportSpecifiersMap, operand.text)) {
-                    setEmitFlags(node, EmitFlags.NoSubstitution);
-                    let transformedUnaryExpression: BinaryExpression;
+            // When we see a prefix or postfix increment expression whose operand is an exported
+            // symbol, we should ensure all exports of that symbol are updated with the correct
+            // value.
+            //
+            // - We do not substitute generated identifiers for any reason.
+            // - We do not substitute identifiers tagged with the LocalName flag.
+            // - We do not substitute identifiers that were originally the name of an enum or
+            //   namespace due to how they are transformed in TypeScript.
+            // - We only substitute identifiers that are exported at the top level.
+            if ((node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken)
+                && isIdentifier(node.operand)
+                && !isGeneratedIdentifier(node.operand)
+                && !isLocalName(node.operand)
+                && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
+                const exportedNames = getExports(node.operand);
+                if (exportedNames) {
+                    let expression: Expression = node.kind === SyntaxKind.PostfixUnaryExpression
+                        ? setTextRange(
+                            factory.createPrefixUnaryExpression(
+                                node.operator,
+                                node.operand
+                            ),
+                            /*location*/ node)
+                        : node;
+                    for (const exportName of exportedNames) {
+                        // Mark the node to prevent triggering this rule again.
+                        noSubstitution[getNodeId(expression)] = true;
+                        expression = createExportExpression(exportName, expression);
+                    }
                     if (node.kind === SyntaxKind.PostfixUnaryExpression) {
-                        transformedUnaryExpression = createBinary(
-                            operand,
-                            createToken(operator === SyntaxKind.PlusPlusToken ? SyntaxKind.PlusEqualsToken : SyntaxKind.MinusEqualsToken),
-                            createLiteral(1),
-                            /*location*/ node
-                        );
-                        // We have to set no substitution flag here to prevent visit the binary expression and substitute it again as we will preform all necessary substitution in here
-                        setEmitFlags(transformedUnaryExpression, EmitFlags.NoSubstitution);
+                        noSubstitution[getNodeId(expression)] = true;
+                        expression = node.operator === SyntaxKind.PlusPlusToken
+                            ? factory.createSubtract(expression, factory.createNumericLiteral(1))
+                            : factory.createAdd(expression, factory.createNumericLiteral(1));
                     }
-                    let nestedExportAssignment: BinaryExpression;
-                    for (const specifier of bindingNameExportSpecifiersMap[operand.text]) {
-                        nestedExportAssignment = nestedExportAssignment ?
-                            createExportAssignment(specifier.name, nestedExportAssignment) :
-                            createExportAssignment(specifier.name, transformedUnaryExpression || node);
-                    }
-                    return nestedExportAssignment;
+                    return expression;
                 }
             }
+
             return node;
         }
 
-        function trySubstituteExportedName(node: Identifier) {
-            const emitFlags = getEmitFlags(node);
-            if ((emitFlags & EmitFlags.LocalName) === 0) {
-                const container = resolver.getReferencedExportContainer(node, (emitFlags & EmitFlags.ExportName) !== 0);
-                if (container) {
-                    if (container.kind === SyntaxKind.SourceFile) {
-                        return createPropertyAccess(
-                            createIdentifier("exports"),
-                            getSynthesizedClone(node),
-                            /*location*/ node
-                        );
-                    }
+        /**
+         * Gets the additional exports of a name.
+         *
+         * @param name The name.
+         */
+        function getExports(name: Identifier): Identifier[] | undefined {
+            if (!isGeneratedIdentifier(name)) {
+                const valueDeclaration = resolver.getReferencedImportDeclaration(name)
+                    || resolver.getReferencedValueDeclaration(name);
+                if (valueDeclaration) {
+                    return currentModuleInfo
+                        && currentModuleInfo.exportedBindings[getOriginalNodeId(valueDeclaration)];
                 }
             }
-
-            return undefined;
-        }
-
-        function trySubstituteImportedName(node: Identifier): Expression {
-            if ((getEmitFlags(node) & EmitFlags.LocalName) === 0) {
-                const declaration = resolver.getReferencedImportDeclaration(node);
-                if (declaration) {
-                    if (isImportClause(declaration)) {
-                        if (languageVersion >= ScriptTarget.ES5) {
-                            return createPropertyAccess(
-                                getGeneratedNameForNode(declaration.parent),
-                                createIdentifier("default"),
-                                /*location*/ node
-                            );
-                        }
-                        else {
-                            // TODO: ES3 transform to handle x.default -> x["default"]
-                            return createElementAccess(
-                                getGeneratedNameForNode(declaration.parent),
-                                createLiteral("default"),
-                                /*location*/ node
-                            );
-                        }
-                    }
-                    else if (isImportSpecifier(declaration)) {
-                        const name = declaration.propertyName || declaration.name;
-                        if (name.originalKeywordKind === SyntaxKind.DefaultKeyword && languageVersion <= ScriptTarget.ES3) {
-                            // TODO: ES3 transform to handle x.default -> x["default"]
-                            return createElementAccess(
-                                getGeneratedNameForNode(declaration.parent.parent.parent),
-                                createLiteral(name.text),
-                                /*location*/ node
-                            );
-                        }
-                        else {
-                            return createPropertyAccess(
-                                getGeneratedNameForNode(declaration.parent.parent.parent),
-                                getSynthesizedClone(name),
-                                /*location*/ node
-                            );
-                        }
-                    }
-                }
-            }
-            return undefined;
-        }
-
-        function getModuleMemberName(name: Identifier) {
-            return createPropertyAccess(
-                createIdentifier("exports"),
-                name,
-                /*location*/ name
-            );
-        }
-
-        function createRequireCall(importNode: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration) {
-            const moduleName = getExternalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
-            const args: Expression[] = [];
-            if (isDefined(moduleName)) {
-                args.push(moduleName);
-            }
-
-            return createCall(createIdentifier("require"), /*typeArguments*/ undefined, args);
-        }
-
-        function createExportStatement(name: Identifier, value: Expression, location?: TextRange) {
-            const statement = createStatement(createExportAssignment(name, value));
-            statement.startsOnNewLine = true;
-            if (location) {
-                setSourceMapRange(statement, location);
-            }
-
-            return statement;
-        }
-
-        function createExportAssignment(name: Identifier, value: Expression) {
-            return createAssignment(
-                name.originalKeywordKind === SyntaxKind.DefaultKeyword && languageVersion === ScriptTarget.ES3
-                    ? createElementAccess(
-                        createIdentifier("exports"),
-                        createLiteral(name.text)
-                    )
-                    : createPropertyAccess(
-                        createIdentifier("exports"),
-                        getSynthesizedClone(name)
-                    ),
-                value
-            );
-        }
-
-        interface AsynchronousDependencies {
-            aliasedModuleNames: Expression[];
-            unaliasedModuleNames: Expression[];
-            importAliasNames: ParameterDeclaration[];
-        }
-
-        function collectAsynchronousDependencies(node: SourceFile, includeNonAmdDependencies: boolean): AsynchronousDependencies {
-            // names of modules with corresponding parameter in the factory function
-            const aliasedModuleNames: Expression[] = [];
-
-            // names of modules with no corresponding parameters in factory function
-            const unaliasedModuleNames: Expression[] = [];
-
-            // names of the parameters in the factory function; these
-            // parameters need to match the indexes of the corresponding
-            // module names in aliasedModuleNames.
-            const importAliasNames: ParameterDeclaration[] = [];
-
-            // Fill in amd-dependency tags
-            for (const amdDependency of node.amdDependencies) {
-                if (amdDependency.name) {
-                    aliasedModuleNames.push(createLiteral(amdDependency.path));
-                    importAliasNames.push(createParameter(amdDependency.name));
-                }
-                else {
-                    unaliasedModuleNames.push(createLiteral(amdDependency.path));
-                }
-            }
-
-            for (const importNode of externalImports) {
-                // Find the name of the external module
-                const externalModuleName = getExternalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
-
-                // Find the name of the module alias, if there is one
-                const importAliasName = getLocalNameForExternalImport(importNode, currentSourceFile);
-                if (includeNonAmdDependencies && importAliasName) {
-                    // Set emitFlags on the name of the classDeclaration
-                    // This is so that when printer will not substitute the identifier
-                    setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
-                    aliasedModuleNames.push(externalModuleName);
-                    importAliasNames.push(createParameter(importAliasName));
-                }
-                else {
-                    unaliasedModuleNames.push(externalModuleName);
-                }
-            }
-
-            return { aliasedModuleNames, unaliasedModuleNames, importAliasNames };
-        }
-
-        function updateSourceFile(node: SourceFile, statements: Statement[]) {
-            const updated = getMutableClone(node);
-            updated.statements = createNodeArray(statements, node.statements);
-            return updated;
         }
     }
+
+    // emit helper for dynamic import
+    const dynamicImportUMDHelper: EmitHelper = {
+        name: "typescript:dynamicimport-sync-require",
+        scoped: true,
+        text: `
+            var __syncRequire = typeof module === "object" && typeof module.exports === "object";`
+    };
 }

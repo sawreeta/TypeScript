@@ -11,29 +11,29 @@ class C {
 
 //// [computedPropertyNames3_ES5.js]
 var id;
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C.prototype[0 + 1] = function () { };
     C[function () { }] = function () { };
     Object.defineProperty(C.prototype, delete id, {
         get: function () { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, [0, 1], {
         set: function (v) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "", {
         get: function () { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, id.toString(), {
         set: function (v) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

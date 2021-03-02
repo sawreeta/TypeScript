@@ -137,14 +137,14 @@ var p8 = function (_a) {
     var _b = _a.a, a = _b === void 0 ? 1 : _b;
 };
 var p9 = function (_a) {
-    var _b = _a.a, _c = (_b === void 0 ? { b: 1 } : _b).b, b = _c === void 0 ? 1 : _c;
+    var _b = _a.a, _c = _b === void 0 ? { b: 1 } : _b, _d = _c.b, b = _d === void 0 ? 1 : _d;
 };
 var p10 = function (_a) {
     var _b = _a[0], value = _b.value, done = _b.done;
 };
 // Arrow function used in class member initializer
 // Arrow function used in class member function
-var MyClass = (function () {
+var MyClass = /** @class */ (function () {
     function MyClass() {
         var _this = this;
         this.m = function (n) { return n + 1; };

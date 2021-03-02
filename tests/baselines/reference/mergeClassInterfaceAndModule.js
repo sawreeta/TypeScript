@@ -1,5 +1,4 @@
 //// [mergeClassInterfaceAndModule.ts]
-
 interface C1 {}
 declare class C1 {}
 module C1 {}
@@ -13,7 +12,7 @@ module C3 {}
 interface C3 {}
 
 module C4 {}
-declare class C4 {} // error -- class declaration must preceed module declaration
+declare class C4 {} // error -- class declaration must precede module declaration
 interface C4 {}
 
 //// [mergeClassInterfaceAndModule.js]

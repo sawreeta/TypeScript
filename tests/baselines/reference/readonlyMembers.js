@@ -1,5 +1,4 @@
 //// [readonlyMembers.ts]
-
 interface X {
     readonly a: number;
     readonly b?: number;
@@ -70,7 +69,7 @@ yy["foo"] = "abc";
 var x = { a: 0 };
 x.a = 1; // Error
 x.b = 1; // Error
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
         var _this = this;
         this.b = 1;
@@ -85,7 +84,7 @@ var C = (function () {
     }
     Object.defineProperty(C.prototype, "c", {
         get: function () { return 1; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     C.prototype.foo = function () {

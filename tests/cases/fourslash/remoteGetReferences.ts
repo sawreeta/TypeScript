@@ -93,12 +93,12 @@
 ////remotefoo([|remoteglobalVar|]);
 ////
 //////Increments
-////[|remotefooCls|].[|remoteclsSVar|]++;
+////[|remotefooCls|].[|{| "isWriteAccess": true |}remoteclsSVar|]++;
 ////remotemodTest.remotemodVar++;
-////[|remoteglobalVar|] = [|remoteglobalVar|] + [|remoteglobalVar|];
+////[|{| "isWriteAccess": true |}remoteglobalVar|] = [|remoteglobalVar|] + [|remoteglobalVar|];
 ////
 //////ETC - Other cases
-////[|remoteglobalVar|] = 3;
+////[|{| "isWriteAccess": true |}remoteglobalVar|] = 3;
 ////
 //////Find References misses method param
 ////var
@@ -119,30 +119,30 @@
 ////});
 
 // @Filename: remoteGetReferences_2.ts
-////var [|remoteglobalVar|]: number = 2;
+////[|var [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 10 |}remoteglobalVar|]: number = 2;|]
 ////
-////class [|remotefooCls|] {
+////[|class [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 12 |}remotefooCls|] {
 ////	//Declare
-////	[|remoteclsVar|] = 1;
-////	static [|remoteclsSVar|] = 1;
+////	[|[|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 14 |}remoteclsVar|] = 1;|]
+////	[|static [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 16 |}remoteclsSVar|] = 1;|]
 ////
 ////	constructor(public remoteclsParam: number) {
 ////		//Increments
-////		[|remoteglobalVar|]++;
-////		this.[|remoteclsVar|]++;
-////		[|remotefooCls|].[|remoteclsSVar|]++;
+////		[|{| "isWriteAccess": true |}remoteglobalVar|]++;
+////		this.[|{| "isWriteAccess": true |}remoteclsVar|]++;
+////		[|remotefooCls|].[|{| "isWriteAccess": true |}remoteclsSVar|]++;
 ////		this.remoteclsParam++;
 ////		remotemodTest.remotemodVar++;
 ////	}
-////}
+////}|]
 ////
 ////function remotefoo(remotex: number) {
 ////	//Declare
 ////	var remotefnVar = 1;
 ////
 ////	//Increments
-////	[|remotefooCls|].[|remoteclsSVar|]++;
-////	[|remoteglobalVar|]++;
+////	[|remotefooCls|].[|{| "isWriteAccess": true |}remoteclsSVar|]++;
+////	[|{| "isWriteAccess": true |}remoteglobalVar|]++;
 ////	remotemodTest.remotemodVar++;
 ////	remotefnVar++;
 ////
@@ -155,8 +155,8 @@
 ////	export var remotemodVar: number;
 ////
 ////	//Increments
-////	[|remoteglobalVar|]++;
-////	[|remotefooCls|].[|remoteclsSVar|]++;
+////	[|{| "isWriteAccess": true |}remoteglobalVar|]++;
+////	[|remotefooCls|].[|{| "isWriteAccess": true |}remoteclsSVar|]++;
 ////	remotemodVar++;
 ////
 ////	class remotetestCls {
@@ -167,8 +167,8 @@
 ////        static remoteboo = remotefoo;
 ////
 ////		//Increments
-////		[|remoteglobalVar|]++;
-////		[|remotefooCls|].[|remoteclsSVar|]++;
+////		[|{| "isWriteAccess": true |}remoteglobalVar|]++;
+////		[|remotefooCls|].[|{| "isWriteAccess": true |}remoteclsSVar|]++;
 ////		remotemodVar++;
 ////    }
 ////
@@ -177,4 +177,36 @@
 ////	}
 ////}
 
-verify.rangesWithSameTextReferenceEachOther();
+test.rangesByText().forEach((ranges, text) => {
+    // Definitions
+    if (text === "var remoteglobalVar: number = 2;" ||
+        text === `class remotefooCls {
+	//Declare
+	remoteclsVar = 1;
+	static remoteclsSVar = 1;
+
+	constructor(public remoteclsParam: number) {
+		//Increments
+		remoteglobalVar++;
+		this.remoteclsVar++;
+		remotefooCls.remoteclsSVar++;
+		this.remoteclsParam++;
+		remotemodTest.remotemodVar++;
+	}
+}` ||
+        text == "remoteclsVar = 1;" ||
+        text === "static remoteclsSVar = 1;"
+    ) return;
+
+    const definition = (() => {
+        switch (text) {
+            case "remotefooCls": return "class remotefooCls";
+            case "remoteglobalVar": return "var remoteglobalVar: number";
+            case "remoteclsSVar": return "(property) remotefooCls.remoteclsSVar: number";
+            case "remoteclsVar": return "(property) remotefooCls.remoteclsVar: number";
+            default: throw new Error(text);
+        }
+    })();
+
+    verify.singleReferenceGroup(definition, ranges);
+});

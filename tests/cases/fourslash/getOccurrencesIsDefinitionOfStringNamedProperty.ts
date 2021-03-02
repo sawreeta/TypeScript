@@ -1,5 +1,5 @@
 /// <reference path='fourslash.ts' />
-////let o = { "[|{| "isDefinition": true |}x|]": 12 };
-////let y = o.[|{| "isDefinition": false |}x|];
+////let o = { [|"[|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}x|]": 12|] };
+////let y = o.[|x|];
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup('(property) "x": number', "x");

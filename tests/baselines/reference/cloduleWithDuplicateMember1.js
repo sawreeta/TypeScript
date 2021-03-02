@@ -16,19 +16,19 @@ module C {
 }
 
 //// [cloduleWithDuplicateMember1.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "x", {
         get: function () { return 1; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "x", {
         get: function () {
             return '';
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     C.foo = function () { };

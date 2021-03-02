@@ -1,5 +1,4 @@
 //// [classStaticPropertyTypeGuard.ts]
-
 // Repro from #8923
 
 class A {
@@ -15,7 +14,7 @@ class A {
 
 //// [classStaticPropertyTypeGuard.js]
 // Repro from #8923
-var A = (function () {
+var A = /** @class */ (function () {
     function A() {
     }
     Object.defineProperty(A.prototype, "a", {
@@ -25,7 +24,7 @@ var A = (function () {
             }
             return A._a = 'helloworld';
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return A;

@@ -4,7 +4,7 @@
 ////      jspm: string;
 ////      'jspm:browser': string;
 ////  } = {
-////          /*0*/: "", 
+////          /*0*/: "",
 ////  }
 
 ////  let configFiles2: {
@@ -12,15 +12,14 @@
 ////      'jspm:browser': string;
 ////  } = {
 ////         jspm: "",
-////         '/*1*/': "" 
+////         '[|/*1*/|]': ""
 ////  }
 
-goTo.marker('0');
-verify.completionListContains("jspm");
-verify.completionListAllowsNewIdentifier();
-verify.memberListCount(1);
-
-goTo.marker('1');
-verify.completionListContains("jspm:browser");
-verify.completionListAllowsNewIdentifier();
-verify.memberListCount(2);
+const replacementSpan = test.ranges()[0]
+verify.completions(
+    { marker: "0", exact: ["jspm", '"jspm:browser"'] },
+    { marker: "1", exact: [
+        { name: "jspm", replacementSpan },
+        { name: "jspm:browser", replacementSpan }
+    ] }
+);

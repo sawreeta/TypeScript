@@ -100,3 +100,9 @@ tests/cases/conformance/types/typeParameters/typeParameterLists/typeParameterInd
 !!! error TS2313: Type parameter 'T' has a circular constraint.
                                                 ~
 !!! error TS2313: Type parameter 'V' has a circular constraint.
+    
+    // Repro from #25740
+    
+    type Foo<T> = [T] extends [number] ? {} : {};
+    function foo<S extends Foo<S>>() {}
+    

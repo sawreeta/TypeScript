@@ -11,7 +11,7 @@ class C {
 
 
 //// [typeOfThisInStatics.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C.foo = function () {
@@ -22,7 +22,7 @@ var C = (function () {
             var r = this;
             return 1;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

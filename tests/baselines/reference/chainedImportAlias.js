@@ -13,6 +13,8 @@ y.m.foo();
 
 //// [chainedImportAlias_file0.js]
 "use strict";
+exports.__esModule = true;
+exports.m = void 0;
 var m;
 (function (m) {
     function foo() { }
@@ -20,6 +22,7 @@ var m;
 })(m = exports.m || (exports.m = {}));
 //// [chainedImportAlias_file1.js]
 "use strict";
+exports.__esModule = true;
 var x = require("./chainedImportAlias_file0");
 var y = x;
 y.m.foo();

@@ -4,14 +4,10 @@
 //// export function doThing(): string;
 //// export function doTheOtherThing(): void;
 
-//// export as namespace [|myLib|];
+//// [|export as namespace [|{| "contextRangeIndex": 0 |}myLib|];|]
 
 // @Filename: 1.ts
 //// /// <reference path="0.d.ts" />
 //// [|myLib|].doThing();
 
-const ranges = test.ranges()
-for (const range of ranges) {
-    goTo.position(range.start);
-    verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
-}
+verify.rangesWithSameTextAreRenameLocations("myLib");

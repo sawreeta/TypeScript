@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/privacyInterfaceExtendsClauseDeclFile.ts] ////
 
 //// [privacyInterfaceExtendsClauseDeclFile_externalModule.ts]
-
 export module publicModule {
     export interface publicInterfaceInPublicModule {
     }
@@ -96,4 +95,63 @@ interface publicInterfaceImplementingPublicInterfaceInGlobal extends publicInter
 
 //// [privacyInterfaceExtendsClauseDeclFile_externalModule.js]
 "use strict";
+exports.__esModule = true;
 //// [privacyInterfaceExtendsClauseDeclFile_GlobalFile.js]
+
+
+//// [privacyInterfaceExtendsClauseDeclFile_externalModule.d.ts]
+export declare module publicModule {
+    export interface publicInterfaceInPublicModule {
+    }
+    interface privateInterfaceInPublicModule {
+    }
+    export interface publicInterfaceImplementingPublicInterfaceInModule extends publicInterfaceInPublicModule {
+    }
+    export interface publicInterfaceImplementingPrivateInterfaceInModule extends privateInterfaceInPublicModule {
+    }
+    export interface publicInterfaceImplementingFromPrivateModuleInterface extends privateModule.publicInterfaceInPrivateModule {
+    }
+    export interface publicInterfaceImplementingPrivateAndPublicInterface extends privateInterfaceInPublicModule, publicInterfaceInPublicModule {
+    }
+    export {};
+}
+declare module privateModule {
+    export interface publicInterfaceInPrivateModule {
+    }
+    interface privateInterfaceInPrivateModule {
+    }
+    export interface publicInterfaceImplementingPublicInterfaceInModule extends publicInterfaceInPrivateModule {
+    }
+    export interface publicInterfaceImplementingPrivateInterfaceInModule extends privateInterfaceInPrivateModule {
+    }
+    export interface publicInterfaceImplementingFromPrivateModuleInterface extends privateModule.publicInterfaceInPrivateModule {
+    }
+    export {};
+}
+export interface publicInterface {
+}
+interface privateInterface {
+}
+export interface publicInterfaceImplementingPublicInterface extends publicInterface {
+}
+export interface publicInterfaceImplementingPrivateInterface extends privateInterface {
+}
+export interface publicInterfaceImplementingFromPrivateModuleInterface extends privateModule.publicInterfaceInPrivateModule {
+}
+export {};
+//// [privacyInterfaceExtendsClauseDeclFile_GlobalFile.d.ts]
+declare module publicModuleInGlobal {
+    export interface publicInterfaceInPublicModule {
+    }
+    interface privateInterfaceInPublicModule {
+    }
+    export interface publicInterfaceImplementingPublicInterfaceInModule extends publicInterfaceInPublicModule {
+    }
+    export interface publicInterfaceImplementingPrivateInterfaceInModule extends privateInterfaceInPublicModule {
+    }
+    export {};
+}
+interface publicInterfaceInGlobal {
+}
+interface publicInterfaceImplementingPublicInterfaceInGlobal extends publicInterfaceInGlobal {
+}

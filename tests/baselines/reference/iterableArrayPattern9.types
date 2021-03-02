@@ -37,9 +37,10 @@ class FooIterator {
     }
 
     [Symbol.iterator]() {
->Symbol.iterator : symbol
+>[Symbol.iterator] : () => this
+>Symbol.iterator : unique symbol
 >Symbol : SymbolConstructor
->iterator : symbol
+>iterator : unique symbol
 
         return this;
 >this : this

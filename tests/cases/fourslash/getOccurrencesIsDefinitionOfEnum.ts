@@ -1,8 +1,8 @@
 /// <reference path='fourslash.ts' />
-////enum [|{| "isDefinition": true |}E|] {
+////[|enum [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}E|] {
 ////    First,
 ////    Second
-////}
-////let first = [|{| "isDefinition": false |}E|].First;
+////}|]
+////let first = [|E|].First;
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("enum E", "E");

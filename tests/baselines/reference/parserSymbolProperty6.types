@@ -3,8 +3,9 @@ class C {
 >C : C
 
     [Symbol.toStringTag]: string = "";
->Symbol.toStringTag : symbol
+>[Symbol.toStringTag] : string
+>Symbol.toStringTag : unique symbol
 >Symbol : SymbolConstructor
->toStringTag : symbol
+>toStringTag : unique symbol
 >"" : ""
 }

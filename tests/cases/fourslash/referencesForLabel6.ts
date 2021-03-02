@@ -2,11 +2,10 @@
 
 // References to labels with close names
 
-////[|labela|]: while (true) {
-////[|labelb|]:     while (false) { break [|labelb|]; }
+////[|[|{| "contextRangeIndex": 0 |}labela|]: while (true) {
+////[|[|{| "contextRangeIndex": 2 |}labelb|]:     while (false) { [|break [|{| "contextRangeIndex": 4 |}labelb|];|] }|]
 ////            break labelc;
-////}
+////}|]
 
-const [a, b, useB] = test.ranges();
-verify.referencesOf(a, [a]);
-verify.rangesReferenceEachOther([b, useB]);
+verify.singleReferenceGroup("labela", "labela");
+verify.singleReferenceGroup("labelb", "labelb");

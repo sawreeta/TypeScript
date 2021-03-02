@@ -1,5 +1,4 @@
 //// [useStrictLikePrologueString01.ts]
-
 "hey!"
 " use strict "
 export function f() {   
@@ -9,6 +8,8 @@ export function f() {
 "hey!";
 " use strict ";
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.f = void 0;
 function f() {
 }
 exports.f = f;

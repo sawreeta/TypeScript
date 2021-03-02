@@ -12,7 +12,9 @@ export interface IFilterProvider {
 //// [privatePropertyUsingObjectType.js]
 define(["require", "exports"], function (require, exports) {
     "use strict";
-    var FilterManager = (function () {
+    exports.__esModule = true;
+    exports.FilterManager = void 0;
+    var FilterManager = /** @class */ (function () {
         function FilterManager() {
         }
         return FilterManager;

@@ -1,13 +1,7 @@
 === tests/cases/conformance/jsx/file.tsx ===
 declare module JSX {
->JSX : any
-
 	interface Element { }
->Element : Element
-
 	interface IntrinsicElements {
->IntrinsicElements : IntrinsicElements
-
 		[s: string]: any;
 >s : string
 	}
@@ -40,21 +34,27 @@ declare var React: any;
 <div attr="&#0123;&hellip;&#x7D;\"></div>;
 ><div attr="&#0123;&hellip;&#x7D;\"></div> : JSX.Element
 >div : any
->attr : any
+>attr : string
 >div : any
 
 // Does not happen for a string literal that happens to be inside an attribute (and escapes then work)
 <div attr={"&#0123;&hellip;&#x7D;\""}></div>;
 ><div attr={"&#0123;&hellip;&#x7D;\""}></div> : JSX.Element
 >div : any
->attr : any
+>attr : string
 >"&#0123;&hellip;&#x7D;\"" : "&#0123;&hellip;&#x7D;\""
 >div : any
 
 // Preserves single quotes
-<div attr='"'></div>
+<div attr='"'></div>;
 ><div attr='"'></div> : JSX.Element
 >div : any
->attr : any
+>attr : string
+>div : any
+
+// https://github.com/microsoft/TypeScript/issues/35732
+<div>&#x1F408;&#x1F415;&#128007;&#128017;</div>;
+><div>&#x1F408;&#x1F415;&#128007;&#128017;</div> : JSX.Element
+>div : any
 >div : any
 

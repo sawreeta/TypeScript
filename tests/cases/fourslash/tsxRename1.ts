@@ -4,14 +4,12 @@
 //// declare module JSX {
 ////     interface Element { }
 ////     interface IntrinsicElements {
-////         [|div|]: {
+////         [|[|{| "contextRangeIndex": 0 |}div|]: {
 ////             name?: string;
 ////             isOpen?: boolean;
-////         };
+////         };|]
 ////         span: { n: string; };
 ////     }
 //// }
-//// var x = <[|di/*ds*/v|] />;
-
-goTo.marker('ds');
-verify.renameLocations(false, false);
+//// var x = [|<[|{| "contextRangeIndex": 2 |}div|] />|];
+verify.rangesWithSameTextAreRenameLocations("div");

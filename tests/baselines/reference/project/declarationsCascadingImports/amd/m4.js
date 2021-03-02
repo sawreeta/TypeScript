@@ -1,6 +1,8 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
-    var d = (function () {
+    exports.__esModule = true;
+    exports.foo = exports.x = exports.d = void 0;
+    var d = /** @class */ (function () {
         function d() {
         }
         return d;

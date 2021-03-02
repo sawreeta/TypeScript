@@ -3,13 +3,10 @@
 // @allowNonTsExtensions: true
 // @Filename: jsDocTypedef_form2.js
 ////
-//// /** @typedef {(string | number)} /*1*/[|NumberLike|] */
+//// /** [|@typedef {(string | number)} [|{| "contextRangeIndex": 0 |}NumberLike|]|] */
 ////
-//// /** @type {/*2*/[|NumberLike|]} */
+//// /** @type {[|NumberLike|]} */
 //// var numberLike;
 
-goTo.file('jsDocTypedef_form2.js')
-goTo.marker('1');
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ true);
-goTo.marker('2');
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ true);
+const [rDef, ...ranges] = test.ranges();
+verify.rangesAreRenameLocations({ findInComments: true, ranges });

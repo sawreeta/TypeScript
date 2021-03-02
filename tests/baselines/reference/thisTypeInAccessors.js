@@ -57,26 +57,26 @@ var copiedFromGetterUnannotated = {
     get x() { return this.n; },
     set x(n) { this.n = n; }
 };
-var Explicit = (function () {
+var Explicit = /** @class */ (function () {
     function Explicit() {
         this.n = 17;
     }
     Object.defineProperty(Explicit.prototype, "x", {
         get: function () { return this.n; },
         set: function (n) { this.n = n; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Explicit;
 }());
-var Contextual = (function () {
+var Contextual = /** @class */ (function () {
     function Contextual() {
         this.n = 21;
     }
     Object.defineProperty(Contextual.prototype, "x", {
         get: function () { return this.n; } // inside a class, so already correct
         ,
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Contextual;

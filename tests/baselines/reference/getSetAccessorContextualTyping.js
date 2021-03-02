@@ -29,7 +29,7 @@ class C {
 // In the body of a get accessor with no return type annotation,
 // if a matching set accessor exists and that set accessor has a parameter type annotation,
 // return expressions are contextually typed by the type given in the set accessor's parameter type annotation.
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "X", {
@@ -37,7 +37,7 @@ var C = (function () {
             return "string"; // Error; get contextual type by set accessor parameter type annotation
         },
         set: function (x) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "Y", {
@@ -45,7 +45,7 @@ var C = (function () {
             return true;
         },
         set: function (y) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "W", {
@@ -53,7 +53,7 @@ var C = (function () {
             return true;
         },
         set: function (w) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "Z", {
@@ -61,7 +61,7 @@ var C = (function () {
             return 1;
         },
         set: function (z) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

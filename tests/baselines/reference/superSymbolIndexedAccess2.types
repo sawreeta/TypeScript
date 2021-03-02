@@ -1,12 +1,12 @@
 === tests/cases/conformance/expressions/superPropertyAccess/superSymbolIndexedAccess2.ts ===
-
 class Foo {
 >Foo : Foo
 
     [Symbol.isConcatSpreadable]() {
->Symbol.isConcatSpreadable : symbol
+>[Symbol.isConcatSpreadable] : () => number
+>Symbol.isConcatSpreadable : unique symbol
 >Symbol : SymbolConstructor
->isConcatSpreadable : symbol
+>isConcatSpreadable : unique symbol
 
         return 0;
 >0 : 0
@@ -18,16 +18,17 @@ class Bar extends Foo {
 >Foo : Foo
 
     [Symbol.isConcatSpreadable]() {
->Symbol.isConcatSpreadable : symbol
+>[Symbol.isConcatSpreadable] : () => number
+>Symbol.isConcatSpreadable : unique symbol
 >Symbol : SymbolConstructor
->isConcatSpreadable : symbol
+>isConcatSpreadable : unique symbol
 
         return super[Symbol.isConcatSpreadable]();
 >super[Symbol.isConcatSpreadable]() : number
 >super[Symbol.isConcatSpreadable] : () => number
 >super : Foo
->Symbol.isConcatSpreadable : symbol
+>Symbol.isConcatSpreadable : unique symbol
 >Symbol : SymbolConstructor
->isConcatSpreadable : symbol
+>isConcatSpreadable : unique symbol
     }
 }

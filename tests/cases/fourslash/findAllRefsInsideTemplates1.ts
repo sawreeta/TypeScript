@@ -1,6 +1,6 @@
 /// <reference path='fourslash.ts'/>
 
-////var [|x|] = 10;
+////[|var [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}x|] = 10;|]
 ////var y = `${ [|x|] } ${ [|x|] }`
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("var x: number", "x");

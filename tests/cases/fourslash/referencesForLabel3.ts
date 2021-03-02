@@ -2,9 +2,8 @@
 
 // References to unused label
 
-////[|label|]: while (true) {
+////[|[|{| "contextRangeIndex": 0 |}label|]: while (true) {
 ////    var label = "label";
-////}
+////}|]
 
-const [label] = test.ranges();
-verify.referencesOf(label, [label]);
+verify.singleReferenceGroup("label", "label");

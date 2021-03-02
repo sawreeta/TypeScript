@@ -1,7 +1,7 @@
 /// <reference path='fourslash.ts'/>
 
 ////module M {
-////    export var [|variable|] = 0;
+////    [|export var [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}variable|] = 0;|]
 ////
 ////    // local use
 ////    var x = [|variable|];
@@ -10,4 +10,4 @@
 ////// external use
 ////M.[|variable|]
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("var M.variable: number", "variable");

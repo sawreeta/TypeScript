@@ -39,26 +39,26 @@ class C {
 
 //// [protectedClassPropertyAccessibleWithinNestedClass.js]
 // no errors
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "y", {
         get: function () { return this.x; },
         set: function (x) { this.y = this.x; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     C.prototype.foo = function () { return this.foo; };
     Object.defineProperty(C, "y", {
         get: function () { return this.x; },
         set: function (x) { this.y = this.x; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     C.foo = function () { return this.foo; };
     C.bar = function () { this.foo(); };
     C.prototype.bar = function () {
-        var C2 = (function () {
+        var C2 = /** @class */ (function () {
             function C2() {
             }
             C2.prototype.foo = function () {

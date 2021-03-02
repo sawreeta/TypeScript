@@ -8,14 +8,14 @@ class f {
 
 
 //// [returnValueInSetter.js]
-var f = (function () {
+var f = /** @class */ (function () {
     function f() {
     }
     Object.defineProperty(f.prototype, "x", {
         set: function (value) {
             return null; // Should be an error
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return f;

@@ -3,9 +3,10 @@ class C1 {
 >C1 : C1
 
     [Symbol.toStringTag]() {
->Symbol.toStringTag : symbol
+>[Symbol.toStringTag] : () => { x: string; }
+>Symbol.toStringTag : unique symbol
 >Symbol : SymbolConstructor
->toStringTag : symbol
+>toStringTag : unique symbol
 
         return { x: "" };
 >{ x: "" } : { x: string; }
@@ -20,7 +21,6 @@ class C2 extends C1 { }
 
 var c: C2;
 >c : C2
->C2 : C2
 
 var obj = c[Symbol.toStringTag]().x;
 >obj : string
@@ -28,8 +28,8 @@ var obj = c[Symbol.toStringTag]().x;
 >c[Symbol.toStringTag]() : { x: string; }
 >c[Symbol.toStringTag] : () => { x: string; }
 >c : C2
->Symbol.toStringTag : symbol
+>Symbol.toStringTag : unique symbol
 >Symbol : SymbolConstructor
->toStringTag : symbol
+>toStringTag : unique symbol
 >x : string
 

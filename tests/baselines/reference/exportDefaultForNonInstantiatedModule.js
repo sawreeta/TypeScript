@@ -1,5 +1,4 @@
 //// [exportDefaultForNonInstantiatedModule.ts]
-
 module m {
     export interface foo {
     }
@@ -8,3 +7,4 @@ module m {
 export default m;
 
 //// [exportDefaultForNonInstantiatedModule.js]
+export {};

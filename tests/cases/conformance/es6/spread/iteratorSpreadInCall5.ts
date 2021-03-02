@@ -1,6 +1,4 @@
 //@target: ES6
-foo(...new SymbolIterator, ...new StringIterator);
-
 function foo(...s: (symbol | string)[]) { }
 class SymbolIterator {
     next() {
@@ -15,7 +13,7 @@ class SymbolIterator {
     }
 }
 
-class StringIterator {
+class _StringIterator {
     next() {
         return {
             value: "",
@@ -27,3 +25,5 @@ class StringIterator {
         return this;
     }
 }
+
+foo(...new SymbolIterator, ...new _StringIterator);

@@ -23,7 +23,9 @@ export class B<T2> {
 //// [genericClassesInModule2.js]
 define(["require", "exports"], function (require, exports) {
     "use strict";
-    var A = (function () {
+    exports.__esModule = true;
+    exports.B = exports.A = void 0;
+    var A = /** @class */ (function () {
         function A(callback) {
             this.callback = callback;
             var child = new B(this);
@@ -34,7 +36,7 @@ define(["require", "exports"], function (require, exports) {
         return A;
     }());
     exports.A = A;
-    var B = (function () {
+    var B = /** @class */ (function () {
         function B(parent) {
             this.parent = parent;
         }

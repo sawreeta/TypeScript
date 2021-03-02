@@ -5,16 +5,14 @@
 ////declare function f(a: "C", b: number): void;
 ////declare function f(a: string, b: number): void;
 ////
-////f("/*1*/C", 2);
+////f("[|/*1*/C|]", 2);
 ////
 ////f("/*2*/
 
-goTo.marker('1');
-verify.completionListContains("A");
-verify.completionListAllowsNewIdentifier();
-verify.memberListCount(3);
+verify.completions({ marker: "1", exact: [
+    { name: "A", replacementSpan: test.ranges()[0] },
+    { name: "B", replacementSpan: test.ranges()[0] },
+    { name: "C", replacementSpan: test.ranges()[0] }
+], isNewIdentifierLocation: true });
 
-goTo.marker('2');
-verify.completionListContains("A");
-verify.completionListAllowsNewIdentifier();
-verify.memberListCount(3);
+verify.completions({ marker: "2", exact: [ "A", "B", "C"], isNewIdentifierLocation: true });

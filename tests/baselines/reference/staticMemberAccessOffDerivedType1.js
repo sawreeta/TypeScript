@@ -10,12 +10,22 @@ class P extends SomeBase {
 
 
 //// [staticMemberAccessOffDerivedType1.js]
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var SomeBase = (function () {
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var SomeBase = /** @class */ (function () {
     function SomeBase() {
     }
     SomeBase.GetNumber = function () {
@@ -23,11 +33,11 @@ var SomeBase = (function () {
     };
     return SomeBase;
 }());
-var P = (function (_super) {
+var P = /** @class */ (function (_super) {
     __extends(P, _super);
     function P() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
+    P.SomeNumber = P.GetNumber();
     return P;
 }(SomeBase));
-P.SomeNumber = P.GetNumber();

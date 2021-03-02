@@ -14,22 +14,14 @@
 ////B./*2*/
 ////A./*3*/
 
-goTo.marker('1');
-verify.completionListContains('foo');
-verify.completionListContains('bar');
-verify.completionListContains('baz');
-edit.insert('foo;');
+goTo.eachMarker((_, i) => {
+    const all = [
+        { name: "foo", sortText: completion.SortText.LocalDeclarationPriority },
+        { name: "bar", sortText: completion.SortText.LocalDeclarationPriority },
+        { name: "baz", sortText: completion.SortText.LocalDeclarationPriority }
+    ];
+    verify.completions({ includes: all.slice(0, 3 - i), excludes: all.slice(3 - i).map(e => e.name) });
+    edit.insert("foo;");
+});
 
-goTo.marker('2');
-verify.completionListContains('foo');
-verify.completionListContains('bar');
-verify.not.completionListContains('baz');
-edit.insert('foo;');
-
-goTo.marker('3');
-verify.completionListContains('foo');
-verify.not.completionListContains('bar');
-verify.not.completionListContains('baz');
-edit.insert('foo;');
-
-verify.numberOfErrorsInCurrentFile(0);
+verify.noErrors();

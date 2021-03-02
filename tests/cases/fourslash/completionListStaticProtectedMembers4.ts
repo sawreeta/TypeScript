@@ -26,24 +26,33 @@
 ////}
 //// Derived./*2*/
 
-// Sub class, everything but private is visible
-goTo.marker("1");
-verify.not.memberListContains('privateMethod');
-verify.not.memberListContains('privateProperty');
-verify.memberListContains('protectedMethod');
-verify.memberListContains('protectedProperty');
-verify.memberListContains('publicMethod');
-verify.memberListContains('publicProperty');
-verify.memberListContains('protectedOverriddenMethod');
-verify.memberListContains('protectedOverriddenProperty');
+const publicCompletions: ReadonlyArray<FourSlashInterface.ExpectedCompletionEntry> = [
+    { name: "publicMethod", sortText: completion.SortText.LocalDeclarationPriority },
+    { name: "publicProperty", sortText: completion.SortText.LocalDeclarationPriority },
+    ...completion.functionMembers
+];
 
-// Can see protected methods elevated to public
-goTo.marker("2");
-verify.not.memberListContains('privateMethod');
-verify.not.memberListContains('privateProperty');
-verify.not.memberListContains('protectedMethod');
-verify.not.memberListContains('protectedProperty');
-verify.memberListContains('publicMethod');
-verify.memberListContains('publicProperty');
-verify.memberListContains('protectedOverriddenMethod');
-verify.memberListContains('protectedOverriddenProperty');
+verify.completions(
+    {
+        // Sub class, everything but private is visible
+        marker: "1",
+        exact: [
+            { name: "prototype", sortText: completion.SortText.LocationPriority },
+            { name: "protectedOverriddenMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedOverriddenProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            ...publicCompletions
+        ],
+    },
+    {
+        // Can see protected methods elevated to public
+        marker: "2",
+        exact: [
+            { name: "prototype", sortText: completion.SortText.LocationPriority },
+            { name: "protectedOverriddenMethod", sortText: completion.SortText.LocalDeclarationPriority },
+            { name: "protectedOverriddenProperty", sortText: completion.SortText.LocalDeclarationPriority },
+            ...publicCompletions,
+        ],
+    },
+);

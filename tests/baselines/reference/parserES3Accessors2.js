@@ -4,12 +4,12 @@ class C {
 }
 
 //// [parserES3Accessors2.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "Foo", {
         set: function (a) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

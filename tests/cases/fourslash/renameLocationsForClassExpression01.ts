@@ -3,7 +3,7 @@
 ////class Foo {
 ////}
 ////
-////var x = class [|Foo|] {
+////var x = [|class [|{| "contextRangeIndex": 0 |}Foo|] {
 ////    doIt() {
 ////        return [|Foo|];
 ////    }
@@ -11,7 +11,7 @@
 ////    static doItStatically() {
 ////        return [|Foo|].y;
 ////    }
-////} 
+////}|]
 ////
 ////var y = class {
 ////   getSomeName() {
@@ -20,8 +20,4 @@
 ////}
 ////var z = class Foo {}
 
-let ranges = test.ranges()
-for (let range of ranges) {
-    goTo.position(range.start);
-    verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
-}
+verify.rangesWithSameTextAreRenameLocations("Foo");

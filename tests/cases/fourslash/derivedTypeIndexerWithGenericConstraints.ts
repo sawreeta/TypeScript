@@ -13,7 +13,7 @@
 ////}
 
 ////class DbSet<TEntity extends Entity> extends BaseCollection<TEntity> { // error
-////    _itemsByKey: { [key: string]: TEntity; };
+////    _itemsByKey: { [key: string]: TEntity; } = {};
 ////}
 
 ////var a: BaseCollection<CollectionItem>;
@@ -25,4 +25,4 @@
 ////var result2 = r2.x;
 
 verify.quickInfoAt("", "var r: CollectionItem");
-verify.numberOfErrorsInCurrentFile(0);
+verify.noErrors();

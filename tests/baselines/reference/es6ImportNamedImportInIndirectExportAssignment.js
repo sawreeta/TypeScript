@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/es6ImportNamedImportInIndirectExportAssignment.ts] ////
 
 //// [es6ImportNamedImportInIndirectExportAssignment_0.ts]
-
 export module a {
     export class c {
     }
@@ -14,9 +13,11 @@ export = x;
 
 //// [es6ImportNamedImportInIndirectExportAssignment_0.js]
 "use strict";
+exports.__esModule = true;
+exports.a = void 0;
 var a;
 (function (a) {
-    var c = (function () {
+    var c = /** @class */ (function () {
         function c() {
         }
         return c;

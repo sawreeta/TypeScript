@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/unusedImports3.ts] ////
 
 //// [file1.ts]
-
 export class Calculator {
     handleChar() {}
 }
@@ -22,7 +21,9 @@ test2();
 
 //// [file1.js]
 "use strict";
-var Calculator = (function () {
+exports.__esModule = true;
+exports.test2 = exports.test = exports.Calculator = void 0;
+var Calculator = /** @class */ (function () {
     function Calculator() {
     }
     Calculator.prototype.handleChar = function () { };
@@ -37,6 +38,7 @@ function test2() {
 exports.test2 = test2;
 //// [file2.js]
 "use strict";
+exports.__esModule = true;
 var file1_1 = require("./file1");
 file1_1.test();
 file1_1.test2();

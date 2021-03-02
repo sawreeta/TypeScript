@@ -1,14 +1,10 @@
 /// <reference path='fourslash.ts' />
 
 ////interface I {
-////    [|x|]: number;
+////    [|[|{| "contextRangeIndex": 0 |}x|]: number;|]
 ////}
 ////var a: I;
 ////var x;
-////({ [|x|]: x } = a);
+////([|{ [|{| "contextRangeIndex": 2 |}x|]: x } = a|]);
 
-let ranges = test.ranges()
-for (let range of ranges) {
-    goTo.position(range.start);
-    verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
-}
+verify.rangesWithSameTextAreRenameLocations("x");

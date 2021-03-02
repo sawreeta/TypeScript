@@ -1,6 +1,4 @@
 //// [functionsMissingReturnStatementsAndExpressions.ts]
-
-
 function f1(): string {
     // errors because there are no return statements
 }
@@ -211,14 +209,14 @@ function f20() {
 function f21() {
     // Not okay; union does not contain void or any
 }
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "m1", {
         get: function () {
             // Errors; get accessors must return a value.
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "m2", {
@@ -226,14 +224,14 @@ var C = (function () {
             // Permissible; returns undefined.
             return;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "m3", {
         get: function () {
             return "Okay, because this is a return expression.";
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "m4", {
@@ -241,7 +239,7 @@ var C = (function () {
             // Fine since this consists of a single throw statement.
             throw null;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "m5", {
@@ -252,7 +250,7 @@ var C = (function () {
             throw undefined.
             ;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

@@ -1,7 +1,7 @@
 /// <reference path='fourslash.ts' />
-////interface [|{| "isDefinition": true |}I|] {
+////[|interface [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}I|] {
 ////    p: number;
-////}
-////let i: [|{| "isDefinition": false |}I|] = { p: 12 };
+////}|]
+////let i: [|I|] = { p: 12 };
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("interface I", "I");

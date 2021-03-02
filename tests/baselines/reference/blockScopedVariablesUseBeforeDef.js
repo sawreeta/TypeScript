@@ -103,6 +103,7 @@ function foo14() {
     let x
 }
 
+
 //// [blockScopedVariablesUseBeforeDef.js]
 function foo0() {
     var a = x;
@@ -117,7 +118,7 @@ function foo2() {
     var x;
 }
 function foo3() {
-    var X = (function () {
+    var X = /** @class */ (function () {
         function X() {
         }
         X.prototype.m = function () { return x; };
@@ -126,11 +127,11 @@ function foo3() {
     var x;
 }
 function foo4() {
-    var y = (function () {
-        function class_1() {
+    var y = /** @class */ (function () {
+        function y() {
         }
-        class_1.prototype.m = function () { return x; };
-        return class_1;
+        y.prototype.m = function () { return x; };
+        return y;
     }());
     var x;
 }
@@ -145,7 +146,7 @@ function foo6() {
     var x;
 }
 function foo7() {
-    var A = (function () {
+    var A = /** @class */ (function () {
         function A() {
             this.a = x;
         }
@@ -154,54 +155,54 @@ function foo7() {
     var x;
 }
 function foo8() {
-    var y = (function () {
-        function class_2() {
+    var y = /** @class */ (function () {
+        function class_1() {
             this.a = x;
         }
-        return class_2;
+        return class_1;
     }());
     var x;
 }
 function foo9() {
-    var y = (_a = (function () {
-            function class_3() {
+    var _a;
+    var y = (_a = /** @class */ (function () {
+            function class_2() {
             }
-            return class_3;
+            return class_2;
         }()),
         _a.a = x,
         _a);
     var x;
-    var _a;
 }
 function foo10() {
-    var A = (function () {
+    var A = /** @class */ (function () {
         function A() {
         }
+        A.a = x;
         return A;
     }());
-    A.a = x;
     var x;
 }
 function foo11() {
     function f() {
-        var y = (_a = (function () {
-                function class_4() {
+        var _a;
+        var y = (_a = /** @class */ (function () {
+                function class_3() {
                 }
-                return class_4;
+                return class_3;
             }()),
             _a.a = x,
             _a);
-        var _a;
     }
     var x;
 }
 function foo12() {
     function f() {
-        var y = (function () {
-            function class_5() {
+        var y = /** @class */ (function () {
+            function class_4() {
                 this.a = x;
             }
-            return class_5;
+            return class_4;
         }());
     }
     var x;

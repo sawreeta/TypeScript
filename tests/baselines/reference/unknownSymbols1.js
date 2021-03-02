@@ -33,11 +33,21 @@ class C5 {
 }
 
 //// [unknownSymbols1.js]
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var x = asdf;
 var y;
 function foo(x, y) { }
@@ -45,22 +55,22 @@ function foo2() {
     return asdf;
 }
 var z = x; // should be an error
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     return C;
 }());
-var C2 = (function () {
+var C2 = /** @class */ (function () {
     function C2() {
     }
     return C2;
 }());
-var C3 = (function () {
+var C3 = /** @class */ (function () {
     function C3(x) {
     }
     return C3;
 }());
-var C4 = (function (_super) {
+var C4 = /** @class */ (function (_super) {
     __extends(C4, _super);
     function C4() {
         return _super.call(this, asdf) || this;
@@ -68,7 +78,7 @@ var C4 = (function (_super) {
     return C4;
 }(C3));
 var x2 = this.asdf; // no error, this is any
-var C5 = (function () {
+var C5 = /** @class */ (function () {
     function C5() {
         this.asdf = asdf;
     }

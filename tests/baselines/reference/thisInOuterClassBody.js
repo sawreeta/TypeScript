@@ -21,7 +21,7 @@ class Foo {
 }
 
 //// [thisInOuterClassBody.js]
-var Foo = (function () {
+var Foo = /** @class */ (function () {
     function Foo() {
         this.x = this;
     }
@@ -36,6 +36,6 @@ var Foo = (function () {
         var a = this.y;
         var b = this.x;
     };
+    Foo.y = this;
     return Foo;
 }());
-Foo.y = this;

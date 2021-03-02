@@ -42,22 +42,23 @@ module M {
 //// [asyncAwaitIsolatedModules_es5.js]
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments)).next());
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
-    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -76,7 +77,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var _this = this;
+Object.defineProperty(exports, "__esModule", { value: true });
+var missing_1 = require("missing");
 function f0() {
     return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
         return [2 /*return*/];
@@ -107,25 +109,25 @@ var f6 = function () {
         return [2 /*return*/];
     }); });
 };
-var f7 = function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+var f7 = function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
     return [2 /*return*/];
 }); }); };
-var f8 = function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+var f8 = function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
     return [2 /*return*/];
 }); }); };
-var f9 = function () { return __awaiter(_this, void 0, missing_1.MyPromise, function () { return __generator(this, function (_a) {
+var f9 = function () { return __awaiter(void 0, void 0, missing_1.MyPromise, function () { return __generator(this, function (_a) {
     return [2 /*return*/];
 }); }); };
-var f10 = function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+var f10 = function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
     return [2 /*return*/, p];
 }); }); };
-var f11 = function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+var f11 = function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
     return [2 /*return*/, mp];
 }); }); };
-var f12 = function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+var f12 = function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
     return [2 /*return*/, mp];
 }); }); };
-var f13 = function () { return __awaiter(_this, void 0, missing_1.MyPromise, function () { return __generator(this, function (_a) {
+var f13 = function () { return __awaiter(void 0, void 0, missing_1.MyPromise, function () { return __generator(this, function (_a) {
     return [2 /*return*/, p];
 }); }); };
 var o = {
@@ -145,7 +147,7 @@ var o = {
         }); });
     }
 };
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C.prototype.m1 = function () {

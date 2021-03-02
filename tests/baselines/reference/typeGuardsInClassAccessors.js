@@ -1,5 +1,4 @@
 //// [typeGuardsInClassAccessors.ts]
-
 // Note that type guards affect types of variables and parameters only and 
 // have no effect on members of objects such as properties. 
 
@@ -110,7 +109,7 @@ class ClassWithAccessors {
 var num;
 var strOrNum;
 var var1;
-var ClassWithAccessors = (function () {
+var ClassWithAccessors = /** @class */ (function () {
     function ClassWithAccessors() {
     }
     Object.defineProperty(ClassWithAccessors.prototype, "p1", {
@@ -133,7 +132,7 @@ var ClassWithAccessors = (function () {
             var var2;
             num = typeof var2 === "string" && var2.length; // string
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(ClassWithAccessors.prototype, "pp1", {
@@ -156,7 +155,7 @@ var ClassWithAccessors = (function () {
             var var2;
             num = typeof var2 === "string" && var2.length; // string
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(ClassWithAccessors, "s1", {
@@ -179,7 +178,7 @@ var ClassWithAccessors = (function () {
             var var2;
             num = typeof var2 === "string" && var2.length; // string
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(ClassWithAccessors, "ss1", {
@@ -202,7 +201,7 @@ var ClassWithAccessors = (function () {
             var var2;
             num = typeof var2 === "string" && var2.length; // string
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return ClassWithAccessors;

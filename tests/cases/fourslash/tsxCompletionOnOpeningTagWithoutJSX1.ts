@@ -1,7 +1,7 @@
 ﻿/// <reference path='fourslash.ts' />
 
 //@Filename: file.tsx
-//// var x = </**/;
+//// var x = 'something'
+//// var y = </**/;
 
-goTo.marker();
-verify.memberListCount(42);
+verify.completions({ marker: "", exact: [completion.globalThisEntry, ...completion.globalsVars, "x", completion.undefinedVarEntry] });

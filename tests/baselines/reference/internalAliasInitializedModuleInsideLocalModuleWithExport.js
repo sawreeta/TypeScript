@@ -14,11 +14,13 @@ export module c {
 //// [internalAliasInitializedModuleInsideLocalModuleWithExport.js]
 define(["require", "exports"], function (require, exports) {
     "use strict";
+    exports.__esModule = true;
+    exports.c = exports.a = void 0;
     var a;
     (function (a) {
         var b;
         (function (b) {
-            var c = (function () {
+            var c = /** @class */ (function () {
                 function c() {
                 }
                 return c;

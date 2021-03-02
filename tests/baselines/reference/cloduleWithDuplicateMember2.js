@@ -12,17 +12,17 @@ module C {
 }
 
 //// [cloduleWithDuplicateMember2.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "x", {
         set: function (y) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, "y", {
         set: function (z) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

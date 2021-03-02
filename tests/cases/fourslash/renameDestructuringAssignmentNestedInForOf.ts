@@ -3,20 +3,20 @@
 ////interface MultiRobot {
 ////    name: string;
 ////    skills: {
-////        /*1*/[|primary|]: string;
+////        [|[|{| "contextRangeIndex": 0 |}primary|]: string;|]
 ////        secondary: string;
 ////    };
 ////}
 ////let multiRobots: MultiRobot[];
-////for ({ skills: { /*2*/[|primary|]: primaryA, secondary: secondaryA } } of multiRobots) {
-////    console.log(primaryA);
+////let [|[|{| "contextRangeIndex": 2 |}primary|]: string|], secondary: string, primaryA: string, secondaryA: string;
+////for ([|{ skills: { [|{| "contextRangeIndex": 4 |}primary|]: primaryA, secondary: secondaryA } } of multiRobots|]) {
+////    primaryA;
 ////}
-////for ({ skills: { [|primary|], secondary } } of multiRobots) {
-////    console.log(primary);
+////for ([|{ skills: { [|{| "contextRangeIndex": 6 |}primary|], secondary } } of multiRobots|]) {
+////    [|primary|];
 ////}
 
-goTo.marker("1");
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
-
-goTo.marker("2");
-verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
+verify.noErrors();
+const [r0Def, r0, r1Def, r1, r2Def, r2, r3Def, r3, r4] = test.ranges();
+verify.renameLocations([r0, r2], [r0, r2, { range: r3, suffixText: ": primary" }]);
+verify.renameLocations([r1, r3, r4], [r1, { range: r3, prefixText: "primary: " }, r4])

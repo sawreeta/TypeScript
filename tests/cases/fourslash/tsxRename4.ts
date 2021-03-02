@@ -1,20 +1,20 @@
 /// <reference path='fourslash.ts' />
 
-//@Filename: file.tsx
-//// declare module JSX {
-////     interface Element { }
-////     interface IntrinsicElements {
-////     }
-////     interface ElementAttributesProperty { props }
-//// }
-//// class [|MyClass|] {
-////   props: {
-////     name?: string;
-////     size?: number;
-//// }
-//// 
-//// 
-//// var x = <[|MyC/**/lass|] name='hello'></[|MyClass|]>;
+// @jsx: preserve
 
-goTo.marker();
-verify.renameLocations(false, false);
+//@Filename: file.tsx
+////declare module JSX {
+////    interface Element {}
+////    interface IntrinsicElements {
+////        div: {};
+////    }
+////}
+////[|class [|{| "contextRangeIndex": 0 |}MyClass|] {}|]
+////
+////[|<[|{| "contextRangeIndex": 2 |}MyClass|]></[|{| "contextRangeIndex": 2 |}MyClass|]>|];
+////[|<[|{| "contextRangeIndex": 5 |}MyClass|]/>|];
+////
+////[|<[|{| "contextRangeIndex": 7 |}div|]> </[|{| "contextRangeIndex": 7 |}div|]>|]
+
+verify.noErrors();
+verify.rangesWithSameTextAreRenameLocations("MyClass", "div");

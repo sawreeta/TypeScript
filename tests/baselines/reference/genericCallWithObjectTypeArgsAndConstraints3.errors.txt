@@ -1,6 +1,4 @@
-tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints3.ts(18,10): error TS2453: The type argument for type parameter 'T' cannot be inferred from the usage. Consider specifying the type arguments explicitly.
-  Type argument candidate 'Derived' is not a valid type argument because it is not a supertype of candidate 'Derived2'.
-    Property 'y' is missing in type 'Derived2'.
+tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints3.ts(18,32): error TS2741: Property 'y' is missing in type 'Derived2' but required in type 'Derived'.
 
 
 ==== tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints3.ts (1 errors) ====
@@ -22,10 +20,10 @@ tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithObj
     }
     
     var r1 = f({ x: new Derived(), y: new Derived2() }); // error because neither is supertype of the other
-             ~
-!!! error TS2453: The type argument for type parameter 'T' cannot be inferred from the usage. Consider specifying the type arguments explicitly.
-!!! error TS2453:   Type argument candidate 'Derived' is not a valid type argument because it is not a supertype of candidate 'Derived2'.
-!!! error TS2453:     Property 'y' is missing in type 'Derived2'.
+                                   ~
+!!! error TS2741: Property 'y' is missing in type 'Derived2' but required in type 'Derived'.
+!!! related TS2728 tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints3.ts:7:5: 'y' is declared here.
+!!! related TS6500 tests/cases/conformance/types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints3.ts:13:39: The expected type comes from property 'y' which is declared here on type '{ x: Derived; y: Derived; }'
     
     function f2<T extends Base, U extends { x: T; y: T }>(a: U) {
         var r: T;

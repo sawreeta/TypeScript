@@ -83,15 +83,25 @@ namespace Test {
 
 
 //// [typeGuardOfFormThisMember.js]
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 // There's a 'File' class in the stdlib, wrap with a namespace to avoid collision
 var Test;
 (function (Test) {
-    var FileSystemObject = (function () {
+    var FileSystemObject = /** @class */ (function () {
         function FileSystemObject(path) {
             this.path = path;
         }
@@ -102,20 +112,20 @@ var Test;
             set: function (param) {
                 // noop
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(FileSystemObject.prototype, "isDirectory", {
             get: function () {
                 return this instanceof Directory;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         return FileSystemObject;
     }());
     Test.FileSystemObject = FileSystemObject;
-    var File = (function (_super) {
+    var File = /** @class */ (function (_super) {
         __extends(File, _super);
         function File(path, content) {
             var _this = _super.call(this, path) || this;
@@ -125,10 +135,10 @@ var Test;
         return File;
     }(FileSystemObject));
     Test.File = File;
-    var Directory = (function (_super) {
+    var Directory = /** @class */ (function (_super) {
         __extends(Directory, _super);
         function Directory() {
-            return _super.apply(this, arguments) || this;
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         return Directory;
     }(FileSystemObject));
@@ -170,8 +180,9 @@ declare namespace Test {
     class FileSystemObject {
         path: string;
         isFSO: this is FileSystemObject;
-        isFile: this is File;
-        readonly isDirectory: this is Directory;
+        get isFile(): this is File;
+        set isFile(param: this is File);
+        get isDirectory(): this is Directory;
         isNetworked: this is (Networked & this);
         constructor(path: string);
     }

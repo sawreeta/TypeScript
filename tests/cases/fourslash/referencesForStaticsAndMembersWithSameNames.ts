@@ -3,13 +3,13 @@
 ////module FindRef4 {
 ////	module MixedStaticsClassTest {
 ////		export class Foo {
-////			[|bar|]: Foo;
-////			static [|bar|]: Foo;
+////			[|[|{| "isDefinition": true, "contextRangeIndex": 0 |}bar|]: Foo;|]
+////			[|static [|{| "isDefinition": true, "contextRangeIndex": 2 |}bar|]: Foo;|]
 ////
-////			public [|foo|](): void {
-////			}
-////			public static [|foo|](): void {
-////			}
+////			[|public [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 4 |}foo|](): void {
+////			}|]
+////			[|public static [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 6 |}foo|](): void {
+////			}|]
 ////		}
 ////	}
 ////
@@ -25,16 +25,16 @@
 ////	}
 ////}
 
-const [fooBar, fooStaticBar, fooFoo, fooStaticFoo, xFoo, xBar, staticFoo, staticBar] = test.ranges();
+const [fooBarDef, fooBar, fooStaticBarDef, fooStaticBar, fooFooDef, fooFoo, fooStaticFooDef, fooStaticFoo, xFoo, xBar, staticFoo, staticBar] = test.ranges();
 
 // References to a member method with the same name as a static.
-verify.referencesOf(fooFoo, [fooFoo, xFoo]);
+verify.singleReferenceGroup("(method) MixedStaticsClassTest.Foo.foo(): void", [fooFoo, xFoo]);
 
 // References to a static method with the same name as a member.
-verify.referencesOf(fooStaticFoo, [fooStaticFoo, staticFoo]);
+verify.singleReferenceGroup("(method) MixedStaticsClassTest.Foo.foo(): void", [fooStaticFoo, staticFoo]);
 
 // References to a member property with the same name as a static.
-verify.referencesOf(fooBar, [fooBar, xBar]);
+verify.singleReferenceGroup("(property) MixedStaticsClassTest.Foo.bar: Foo", [fooBar, xBar]);
 
 // References to a static property with the same name as a member.
-verify.referencesOf(fooStaticBar, [fooStaticBar, staticBar]);
+verify.singleReferenceGroup("(property) MixedStaticsClassTest.Foo.bar: Foo", [fooStaticBar, staticBar]);

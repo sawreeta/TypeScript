@@ -1,10 +1,10 @@
 ﻿/// <reference path="fourslash.ts"/>
 
 ////var /*1*/{/*2*/a,/*3*/b:/*4*/k,/*5*/
- 
+
 function verifyIndentationAfterNewLine(marker: string, indentation: number): void {
     goTo.marker(marker);
-    edit.insert("\r\n");
+    edit.insert("\n");
     verify.indentationIs(indentation);
 }
 

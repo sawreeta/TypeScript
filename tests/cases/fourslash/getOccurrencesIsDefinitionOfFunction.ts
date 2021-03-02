@@ -1,6 +1,6 @@
 /// <reference path='fourslash.ts' />
-////function [|{| "isDefinition": true |}func|](x: number) {
-////}
-////[|{| "isDefinition": false |}func|](x)
+////[|function [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}func|](x: number) {
+////}|]
+////[|func|](x)
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("function func(x: number): void", "func");

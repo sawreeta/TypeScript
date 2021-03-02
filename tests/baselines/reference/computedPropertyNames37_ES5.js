@@ -11,28 +11,28 @@ class C {
 }
 
 //// [computedPropertyNames37_ES5.js]
-var Foo = (function () {
+var Foo = /** @class */ (function () {
     function Foo() {
     }
     return Foo;
 }());
-var Foo2 = (function () {
+var Foo2 = /** @class */ (function () {
     function Foo2() {
     }
     return Foo2;
 }());
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "get1", {
         // Computed properties
         get: function () { return new Foo; },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "set1", {
         set: function (p) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

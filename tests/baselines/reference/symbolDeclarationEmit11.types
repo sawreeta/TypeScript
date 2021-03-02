@@ -3,25 +3,29 @@ class C {
 >C : C
 
     static [Symbol.iterator] = 0;
->Symbol.iterator : symbol
+>[Symbol.iterator] : number
+>Symbol.iterator : unique symbol
 >Symbol : SymbolConstructor
->iterator : symbol
+>iterator : unique symbol
 >0 : 0
 
     static [Symbol.isConcatSpreadable]() { }
->Symbol.isConcatSpreadable : symbol
+>[Symbol.isConcatSpreadable] : () => void
+>Symbol.isConcatSpreadable : unique symbol
 >Symbol : SymbolConstructor
->isConcatSpreadable : symbol
+>isConcatSpreadable : unique symbol
 
     static get [Symbol.toPrimitive]() { return ""; }
->Symbol.toPrimitive : symbol
+>[Symbol.toPrimitive] : string
+>Symbol.toPrimitive : unique symbol
 >Symbol : SymbolConstructor
->toPrimitive : symbol
+>toPrimitive : unique symbol
 >"" : ""
 
     static set [Symbol.toPrimitive](x) { }
->Symbol.toPrimitive : symbol
+>[Symbol.toPrimitive] : string
+>Symbol.toPrimitive : unique symbol
 >Symbol : SymbolConstructor
->toPrimitive : symbol
+>toPrimitive : unique symbol
 >x : string
 }

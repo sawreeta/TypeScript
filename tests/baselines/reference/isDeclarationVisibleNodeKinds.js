@@ -1,5 +1,4 @@
 //// [isDeclarationVisibleNodeKinds.ts]
-
 // Function types
 module schema {
     export function createValidator1(schema: any): <T>(data: T) => T {
@@ -128,20 +127,20 @@ var schema;
     schema_8.createValidator8 = createValidator8;
 })(schema || (schema = {}));
 (function (schema) {
-    var T = (function () {
+    var T = /** @class */ (function () {
         function T() {
         }
         Object.defineProperty(T.prototype, "createValidator9", {
             get: function () {
                 return undefined;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(T.prototype, "createValidator10", {
             set: function (v) {
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         return T;
@@ -185,7 +184,7 @@ declare module schema {
 }
 declare module schema {
     class T {
-        readonly createValidator9: <T>(data: T) => T;
-        createValidator10: <T>(data: T) => T;
+        get createValidator9(): <T>(data: T) => T;
+        set createValidator10(v: <T>(data: T) => T);
     }
 }

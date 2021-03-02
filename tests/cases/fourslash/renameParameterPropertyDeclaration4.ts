@@ -1,14 +1,10 @@
 ﻿/// <reference path='fourslash.ts'/>
 
 //// class Foo {
-////     constructor(protected { [|protectedParam|] }) {
+////     constructor([|protected { [|{| "contextRangeIndex": 0 |}protectedParam|] }|]) {
 ////         let myProtectedParam = [|protectedParam|];
 ////     }
 //// }
 
-let ranges = test.ranges();
-verify.assertHasRanges(ranges);
-for (let range of ranges) {
-    goTo.position(range.start);
-    verify.renameLocations(/*findInStrings*/ false, /*findInComments*/ false);
-}
+const [r0Def, r0, r1] = test.ranges();
+verify.renameLocations([r0, r1], [{ range: r0, prefixText: "protectedParam: " }, r1]);

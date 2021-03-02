@@ -1,23 +1,35 @@
 {
-    "kind": "JSDocTypeReference",
+    "kind": "TypeReference",
     "pos": 1,
     "end": 11,
-    "name": {
+    "flags": "JSDoc",
+    "modifierFlagsCache": 0,
+    "transformFlags": 1,
+    "typeName": {
         "kind": "FirstNode",
         "pos": 1,
         "end": 11,
+        "flags": "JSDoc",
+        "modifierFlagsCache": 0,
+        "transformFlags": 0,
         "left": {
             "kind": "Identifier",
             "pos": 1,
             "end": 2,
-            "text": "a"
+            "flags": "JSDoc",
+            "modifierFlagsCache": 0,
+            "transformFlags": 0,
+            "escapedText": "a"
         },
         "right": {
             "kind": "Identifier",
             "pos": 3,
             "end": 11,
+            "flags": "JSDoc",
+            "modifierFlagsCache": 0,
+            "transformFlags": 0,
             "originalKeywordKind": "FunctionKeyword",
-            "text": "function"
+            "escapedText": "function"
         }
     }
 }

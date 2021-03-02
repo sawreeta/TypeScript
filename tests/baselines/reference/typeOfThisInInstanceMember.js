@@ -32,7 +32,7 @@ rs.forEach(x => {
 });
 
 //// [typeOfThisInInstanceMember.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C(x) {
         this.x = this;
         var t = this;
@@ -48,7 +48,7 @@ var C = (function () {
         get: function () {
             return this;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

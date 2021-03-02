@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/declarationFileOverwriteErrorWithOut.ts] ////
 
 //// [out.d.ts]
-
 declare class c {
 }
 
@@ -9,8 +8,9 @@ declare class c {
 class d {
 }
 
+
 //// [out.js]
-var d = (function () {
+var d = /** @class */ (function () {
     function d() {
     }
     return d;

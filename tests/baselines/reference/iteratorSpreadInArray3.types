@@ -1,15 +1,4 @@
 === tests/cases/conformance/es6/spread/iteratorSpreadInArray3.ts ===
-var array = [...[0, 1], ...new SymbolIterator];
->array : (number | symbol)[]
->[...[0, 1], ...new SymbolIterator] : (number | symbol)[]
->...[0, 1] : number
->[0, 1] : number[]
->0 : 0
->1 : 1
->...new SymbolIterator : symbol
->new SymbolIterator : SymbolIterator
->SymbolIterator : typeof SymbolIterator
-
 class SymbolIterator {
 >SymbolIterator : SymbolIterator
 
@@ -32,11 +21,24 @@ class SymbolIterator {
     }
 
     [Symbol.iterator]() {
->Symbol.iterator : symbol
+>[Symbol.iterator] : () => this
+>Symbol.iterator : unique symbol
 >Symbol : SymbolConstructor
->iterator : symbol
+>iterator : unique symbol
 
         return this;
 >this : this
     }
 }
+
+var array = [...[0, 1], ...new SymbolIterator];
+>array : (number | symbol)[]
+>[...[0, 1], ...new SymbolIterator] : (number | symbol)[]
+>...[0, 1] : number
+>[0, 1] : number[]
+>0 : 0
+>1 : 1
+>...new SymbolIterator : symbol
+>new SymbolIterator : SymbolIterator
+>SymbolIterator : typeof SymbolIterator
+

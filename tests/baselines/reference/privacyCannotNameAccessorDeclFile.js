@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/privacyCannotNameAccessorDeclFile.ts] ////
 
 //// [privacyCannotNameAccessorDeclFile_GlobalWidgets.ts]
-
 declare module "GlobalWidgets" {
     export class Widget3 {
         name: string;
@@ -139,7 +138,9 @@ class privateClassWithPrivateModuleGetAccessorTypes {
 //// [privacyCannotNameAccessorDeclFile_GlobalWidgets.js]
 //// [privacyCannotNameAccessorDeclFile_Widgets.js]
 "use strict";
-var Widget1 = (function () {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SpecializedWidget = exports.createWidget1 = exports.Widget1 = void 0;
+var Widget1 = /** @class */ (function () {
     function Widget1() {
         this.name = 'one';
     }
@@ -152,7 +153,7 @@ function createWidget1() {
 exports.createWidget1 = createWidget1;
 var SpecializedWidget;
 (function (SpecializedWidget) {
-    var Widget2 = (function () {
+    var Widget2 = /** @class */ (function () {
         function Widget2() {
             this.name = 'one';
         }
@@ -166,6 +167,8 @@ var SpecializedWidget;
 })(SpecializedWidget = exports.SpecializedWidget || (exports.SpecializedWidget = {}));
 //// [privacyCannotNameAccessorDeclFile_exporter.js]
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createExportedWidget4 = exports.createExportedWidget3 = exports.createExportedWidget2 = exports.createExportedWidget1 = void 0;
 ///<reference path='privacyCannotNameAccessorDeclFile_GlobalWidgets.ts'/>
 var Widgets = require("./privacyCannotNameAccessorDeclFile_Widgets");
 var Widgets1 = require("GlobalWidgets");
@@ -187,193 +190,195 @@ function createExportedWidget4() {
 exports.createExportedWidget4 = createExportedWidget4;
 //// [privacyCannotNameAccessorDeclFile_consumer.js]
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.publicClassWithPrivateModuleGetAccessorTypes = exports.publicClassWithWithPrivateGetAccessorTypes = void 0;
 var exporter = require("./privacyCannotNameAccessorDeclFile_exporter");
-var publicClassWithWithPrivateGetAccessorTypes = (function () {
+var publicClassWithWithPrivateGetAccessorTypes = /** @class */ (function () {
     function publicClassWithWithPrivateGetAccessorTypes() {
     }
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes, "myPublicStaticMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes, "myPrivateStaticMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes.prototype, "myPublicMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes.prototype, "myPrivateMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes, "myPublicStaticMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes, "myPrivateStaticMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes.prototype, "myPublicMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithWithPrivateGetAccessorTypes.prototype, "myPrivateMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return publicClassWithWithPrivateGetAccessorTypes;
 }());
 exports.publicClassWithWithPrivateGetAccessorTypes = publicClassWithWithPrivateGetAccessorTypes;
-var privateClassWithWithPrivateGetAccessorTypes = (function () {
+var privateClassWithWithPrivateGetAccessorTypes = /** @class */ (function () {
     function privateClassWithWithPrivateGetAccessorTypes() {
     }
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes, "myPublicStaticMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes, "myPrivateStaticMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes.prototype, "myPublicMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes.prototype, "myPrivateMethod", {
         get: function () {
             return exporter.createExportedWidget1();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes, "myPublicStaticMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes, "myPrivateStaticMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes.prototype, "myPublicMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithWithPrivateGetAccessorTypes.prototype, "myPrivateMethod1", {
         get: function () {
             return exporter.createExportedWidget3();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return privateClassWithWithPrivateGetAccessorTypes;
 }());
-var publicClassWithPrivateModuleGetAccessorTypes = (function () {
+var publicClassWithPrivateModuleGetAccessorTypes = /** @class */ (function () {
     function publicClassWithPrivateModuleGetAccessorTypes() {
     }
     Object.defineProperty(publicClassWithPrivateModuleGetAccessorTypes, "myPublicStaticMethod", {
         get: function () {
             return exporter.createExportedWidget2();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithPrivateModuleGetAccessorTypes.prototype, "myPublicMethod", {
         get: function () {
             return exporter.createExportedWidget2();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithPrivateModuleGetAccessorTypes, "myPublicStaticMethod1", {
         get: function () {
             return exporter.createExportedWidget4();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(publicClassWithPrivateModuleGetAccessorTypes.prototype, "myPublicMethod1", {
         get: function () {
             return exporter.createExportedWidget4();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return publicClassWithPrivateModuleGetAccessorTypes;
 }());
 exports.publicClassWithPrivateModuleGetAccessorTypes = publicClassWithPrivateModuleGetAccessorTypes;
-var privateClassWithPrivateModuleGetAccessorTypes = (function () {
+var privateClassWithPrivateModuleGetAccessorTypes = /** @class */ (function () {
     function privateClassWithPrivateModuleGetAccessorTypes() {
     }
     Object.defineProperty(privateClassWithPrivateModuleGetAccessorTypes, "myPublicStaticMethod", {
         get: function () {
             return exporter.createExportedWidget2();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithPrivateModuleGetAccessorTypes.prototype, "myPublicMethod", {
         get: function () {
             return exporter.createExportedWidget2();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithPrivateModuleGetAccessorTypes, "myPublicStaticMethod1", {
         get: function () {
             return exporter.createExportedWidget4();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(privateClassWithPrivateModuleGetAccessorTypes.prototype, "myPublicMethod1", {
         get: function () {
             return exporter.createExportedWidget4();
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return privateClassWithPrivateModuleGetAccessorTypes;
@@ -412,3 +417,21 @@ export declare function createExportedWidget1(): Widgets.Widget1;
 export declare function createExportedWidget2(): Widgets.SpecializedWidget.Widget2;
 export declare function createExportedWidget3(): Widgets1.Widget3;
 export declare function createExportedWidget4(): Widgets1.SpecializedGlobalWidget.Widget4;
+//// [privacyCannotNameAccessorDeclFile_consumer.d.ts]
+/// <reference path="privacyCannotNameAccessorDeclFile_GlobalWidgets.d.ts" />
+export declare class publicClassWithWithPrivateGetAccessorTypes {
+    static get myPublicStaticMethod(): import("./privacyCannotNameAccessorDeclFile_Widgets").Widget1;
+    private static get myPrivateStaticMethod();
+    get myPublicMethod(): import("./privacyCannotNameAccessorDeclFile_Widgets").Widget1;
+    private get myPrivateMethod();
+    static get myPublicStaticMethod1(): import("GlobalWidgets").Widget3;
+    private static get myPrivateStaticMethod1();
+    get myPublicMethod1(): import("GlobalWidgets").Widget3;
+    private get myPrivateMethod1();
+}
+export declare class publicClassWithPrivateModuleGetAccessorTypes {
+    static get myPublicStaticMethod(): import("./privacyCannotNameAccessorDeclFile_Widgets").SpecializedWidget.Widget2;
+    get myPublicMethod(): import("./privacyCannotNameAccessorDeclFile_Widgets").SpecializedWidget.Widget2;
+    static get myPublicStaticMethod1(): import("GlobalWidgets").SpecializedGlobalWidget.Widget4;
+    get myPublicMethod1(): import("GlobalWidgets").SpecializedGlobalWidget.Widget4;
+}

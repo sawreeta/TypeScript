@@ -1,5 +1,4 @@
 //// [controlFlowArrays.ts]
-
 declare function cond(): boolean;
 
 function f1() {
@@ -179,6 +178,15 @@ function f18() {
     return x;  // (string | number | boolean)[]
 }
 
+// Repro from #39470
+
+declare function foo(arg: { val: number }[]): void;
+
+let arr = []
+arr.push({ val: 1, bar: 2 });
+foo(arr);
+
+
 //// [controlFlowArrays.js]
 function f1() {
     var x = [];
@@ -284,7 +292,7 @@ function f10() {
 }
 function f11() {
     var x = [];
-    if (x.length === 0) {
+    if (x.length === 0) { // x.length ok on implicit any[]
         x.push("hello");
     }
     return x;
@@ -292,7 +300,7 @@ function f11() {
 function f12() {
     var x;
     x = [];
-    if (x.length === 0) {
+    if (x.length === 0) { // x.length ok on implicit any[]
         x.push("hello");
     }
     return x;
@@ -341,3 +349,6 @@ function f18() {
     x[2] = true;
     return x; // (string | number | boolean)[]
 }
+var arr = [];
+arr.push({ val: 1, bar: 2 });
+foo(arr);

@@ -4,12 +4,12 @@ class C {
 }
 
 //// [parserMemberAccessorDeclaration4.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "a", {
         set: function (i) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

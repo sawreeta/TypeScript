@@ -1,7 +1,6 @@
 //// [tests/cases/compiler/commentsExternalModules3.ts] ////
 
 //// [commentsExternalModules2_0.ts]
-
 /** Module comment*/
 export module m1 {
     /** b's comment*/
@@ -63,6 +62,8 @@ export var newVar2 = new extMod.m4.m2.c();
 
 //// [commentsExternalModules2_0.js]
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.m4 = exports.m1 = void 0;
 /** Module comment*/
 var m1;
 (function (m1) {
@@ -74,7 +75,7 @@ var m1;
     var m2;
     (function (m2) {
         /** class comment;*/
-        var c = (function () {
+        var c = /** @class */ (function () {
             function c() {
             }
             return c;
@@ -105,7 +106,7 @@ var m4;
     var m2;
     (function (m2) {
         /** class comment; */
-        var c = (function () {
+        var c = /** @class */ (function () {
             function c() {
             }
             return c;
@@ -125,6 +126,8 @@ m4.fooExport();
 var myvar2 = new m4.m2.c();
 //// [commentsExternalModules_1.js]
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.newVar2 = exports.newVar = void 0;
 /**This is on import declaration*/
 var extMod = require("./commentsExternalModules2_0"); // trailing comment 1
 extMod.m1.fooExport();

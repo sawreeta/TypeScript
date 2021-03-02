@@ -1,5 +1,4 @@
 //// [typeArgumentsWithStringLiteralTypes01.ts]
-
 declare function randBool(): boolean;
 declare function takeReturnString(str: string): string;
 declare function takeReturnHello(str: "Hello"): "Hello";
@@ -122,7 +121,7 @@ function fun2(x, y) {
 function fun3() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i - 0] = arguments[_i];
+        args[_i] = arguments[_i];
     }
     return args[+randBool()];
 }
@@ -230,15 +229,15 @@ declare namespace n1 {
 }
 declare namespace n2 {
     let a: "Hello";
-    let b: any;
+    let b: "Hello";
     let c: "Hello";
-    let d: any;
-    let e: any;
+    let d: "Hello";
+    let e: "Hello";
 }
 declare namespace n3 {
     let a: "Hello" | "World";
-    let b: any;
-    let c: any;
-    let d: any;
+    let b: "Hello" | "World";
+    let c: "Hello" | "World";
+    let d: "Hello" | "World";
     let e: "Hello" | "World";
 }

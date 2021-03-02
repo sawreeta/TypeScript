@@ -1,6 +1,4 @@
 //@target: ES6
-new Foo(...new SymbolIterator, ...[...new StringIterator]);
-
 class Foo<T> {
     constructor(...s: T[]) { }
 }
@@ -18,7 +16,7 @@ class SymbolIterator {
     }
 }
 
-class StringIterator {
+class _StringIterator {
     next() {
         return {
             value: "",
@@ -30,3 +28,5 @@ class StringIterator {
         return this;
     }
 }
+
+new Foo(...new SymbolIterator, ...[...new _StringIterator]);

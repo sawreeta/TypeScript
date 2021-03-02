@@ -1,4 +1,4 @@
-/// <reference path="fourslash.ts" />
+/// <reference path="../fourslash.ts" />
 
 //@Filename: findAllRefsOnDefinition-import.ts
 ////export class Test{
@@ -7,9 +7,9 @@
 ////
 ////    }
 ////
-////    public [|start|](){
+////    [|public [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}start|](){
 ////        return this;
-////    }
+////    }|]
 ////
 ////    public stop(){
 ////        return this;
@@ -23,4 +23,4 @@
 ////second.[|start|]();
 ////second.stop();
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("(method) Test.start(): this", "start");

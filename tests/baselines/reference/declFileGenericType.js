@@ -41,20 +41,32 @@ export var j = C.F6;
 
 //// [declFileGenericType.js]
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+exports.__esModule = true;
+exports.j = exports.h = exports.g = exports.f = exports.x = exports.e = exports.d = exports.c = exports.b = exports.a = exports.C = void 0;
 var C;
 (function (C) {
-    var A = (function () {
+    var A = /** @class */ (function () {
         function A() {
         }
         return A;
     }());
     C.A = A;
-    var B = (function () {
+    var B = /** @class */ (function () {
         function B() {
         }
         return B;
@@ -72,7 +84,7 @@ var C;
     C.F5 = F5;
     function F6(x) { return null; }
     C.F6 = F6;
-    var D = (function () {
+    var D = /** @class */ (function () {
         function D(val) {
             this.val = val;
         }
@@ -88,10 +100,10 @@ exports.x = (new C.D(new C.A())).val;
 function f() { }
 exports.f = f;
 exports.g = C.F5();
-var h = (function (_super) {
+var h = /** @class */ (function (_super) {
     __extends(h, _super);
     function h() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return h;
 }(C.A));

@@ -5,7 +5,9 @@ export class Foo {}
 
 //// [modulePrologueCommonjs.js]
 "use strict";
-var Foo = (function () {
+exports.__esModule = true;
+exports.Foo = void 0;
+var Foo = /** @class */ (function () {
     function Foo() {
     }
     return Foo;

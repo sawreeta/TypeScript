@@ -1,6 +1,4 @@
 //// [for-of35.ts]
-for (var v of new StringIterator) { }
-
 class StringIterator {
     next() {
         return {
@@ -8,14 +6,15 @@ class StringIterator {
             value: v
         }
     }
-    
+
     [Symbol.iterator]() {
         return this;
     }
 }
 
-//// [for-of35.js]
 for (var v of new StringIterator) { }
+
+//// [for-of35.js]
 class StringIterator {
     next() {
         return {
@@ -27,3 +26,4 @@ class StringIterator {
         return this;
     }
 }
+for (var v of new StringIterator) { }

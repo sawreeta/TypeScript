@@ -13,7 +13,9 @@ export declare class Bar2 {
 
 //// [noImplicitAnyDestructuringInPrivateMethod.js]
 "use strict";
-var Bar = (function () {
+exports.__esModule = true;
+exports.Bar = void 0;
+var Bar = /** @class */ (function () {
     function Bar() {
     }
     Bar.prototype.bar = function (_a) {
@@ -27,8 +29,8 @@ exports.Bar = Bar;
 
 //// [noImplicitAnyDestructuringInPrivateMethod.d.ts]
 export declare class Bar {
-    private bar({a});
+    private bar;
 }
 export declare class Bar2 {
-    private bar({a});
+    private bar;
 }

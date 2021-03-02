@@ -2,9 +2,9 @@
 
 // Function overloads should be highlighted together.
 
-////function [|foo|](x: string);
-////function [|foo|](x: string, y: number) {
+////[|function [|{| "isDefinition": true, "contextRangeIndex": 0 |}foo|](x: string);|]
+////[|function [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 2 |}foo|](x: string, y: number) {
 ////    [|foo|]('', 43);
-////}
+////}|]
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("function foo(x: string): any", "foo");

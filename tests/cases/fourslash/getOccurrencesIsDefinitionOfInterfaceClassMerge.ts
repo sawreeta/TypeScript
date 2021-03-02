@@ -1,16 +1,16 @@
 /// <reference path='fourslash.ts' />
-////interface [|{| "isDefinition": true |}Numbers|] {
+////[|interface [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 0 |}Numbers|] {
 ////    p: number;
-////}
-////interface [|{| "isDefinition": true |}Numbers|] {
+////}|]
+////[|interface [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 2 |}Numbers|] {
 ////    m: number;
-////}
-////class [|{| "isDefinition": true |}Numbers|] {
+////}|]
+////[|class [|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 4 |}Numbers|] {
 ////    f(n: number) {
 ////        return this.p + this.m + n;
 ////    }
-////}
-////let i: [|{| "isDefinition": false |}Numbers|] = new [|{| "isDefinition": false |}Numbers|]();
+////}|]
+////let i: [|Numbers|] = new [|Numbers|]();
 ////let x = i.f(i.p + i.m);
 
-verify.rangesReferenceEachOther();
+verify.singleReferenceGroup("class Numbers\ninterface Numbers", "Numbers");

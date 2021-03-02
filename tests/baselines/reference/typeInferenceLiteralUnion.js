@@ -38,8 +38,10 @@ extentMixed = extent([new NumCoercible(10), 13, '12', true]);
 
 //// [typeInferenceLiteralUnion.js]
 "use strict";
+exports.__esModule = true;
+exports.extent = void 0;
 // Not very useful, but meets Numeric
-var NumCoercible = (function () {
+var NumCoercible = /** @class */ (function () {
     function NumCoercible(a) {
         this.a = a;
     }

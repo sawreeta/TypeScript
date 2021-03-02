@@ -14,7 +14,7 @@ class C {
 
 //// [anyIdenticalToItself.js]
 function foo(x, y) { }
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "X", {
@@ -24,7 +24,7 @@ var C = (function () {
         },
         set: function (v) {
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

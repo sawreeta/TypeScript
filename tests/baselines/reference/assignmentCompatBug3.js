@@ -37,14 +37,14 @@ function makePoint(x, y) {
         }
     };
 }
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     Object.defineProperty(C.prototype, "x", {
         get: function () {
             return 0;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

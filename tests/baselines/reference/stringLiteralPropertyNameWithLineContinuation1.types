@@ -1,9 +1,8 @@
 === tests/cases/compiler/stringLiteralPropertyNameWithLineContinuation1.ts ===
 var x = {'text\
->x : { 'text\
-': string; }
->{'text\':'hello'} : { 'text\
-': string; }
+>x : { text: string; }
+>{'text\':'hello'} : { text: string; }
+>'text\' : string
 
 ':'hello'}
 >'hello' : "hello"
@@ -11,8 +10,7 @@ var x = {'text\
 x.text = "bar"
 >x.text = "bar" : "bar"
 >x.text : string
->x : { 'text\
-': string; }
+>x : { text: string; }
 >text : string
 >"bar" : "bar"
 

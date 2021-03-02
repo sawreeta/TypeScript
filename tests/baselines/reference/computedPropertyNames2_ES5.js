@@ -13,29 +13,29 @@ class C {
 //// [computedPropertyNames2_ES5.js]
 var methodName = "method";
 var accessorName = "accessor";
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     C.prototype[methodName] = function () { };
     C[methodName] = function () { };
     Object.defineProperty(C.prototype, accessorName, {
         get: function () { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, accessorName, {
         set: function (v) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, accessorName, {
         get: function () { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C, accessorName, {
         set: function (v) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;

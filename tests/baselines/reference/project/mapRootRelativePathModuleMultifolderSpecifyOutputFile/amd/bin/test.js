@@ -1,7 +1,9 @@
 define("outputdir_module_multifolder/ref/m1", ["require", "exports"], function (require, exports) {
     "use strict";
+    exports.__esModule = true;
+    exports.m1_f1 = exports.m1_instance1 = exports.m1_c1 = exports.m1_a1 = void 0;
     exports.m1_a1 = 10;
-    var m1_c1 = (function () {
+    var m1_c1 = /** @class */ (function () {
         function m1_c1() {
         }
         return m1_c1;
@@ -15,8 +17,10 @@ define("outputdir_module_multifolder/ref/m1", ["require", "exports"], function (
 });
 define("outputdir_module_multifolder_ref/m2", ["require", "exports"], function (require, exports) {
     "use strict";
+    exports.__esModule = true;
+    exports.m2_f1 = exports.m2_instance1 = exports.m2_c1 = exports.m2_a1 = void 0;
     exports.m2_a1 = 10;
-    var m2_c1 = (function () {
+    var m2_c1 = /** @class */ (function () {
         function m2_c1() {
         }
         return m2_c1;
@@ -30,8 +34,10 @@ define("outputdir_module_multifolder_ref/m2", ["require", "exports"], function (
 });
 define("outputdir_module_multifolder/test", ["require", "exports", "outputdir_module_multifolder/ref/m1", "outputdir_module_multifolder_ref/m2"], function (require, exports, m1, m2) {
     "use strict";
+    exports.__esModule = true;
+    exports.a3 = exports.a2 = exports.f1 = exports.instance1 = exports.c1 = exports.a1 = void 0;
     exports.a1 = 10;
-    var c1 = (function () {
+    var c1 = /** @class */ (function () {
         function c1() {
         }
         return c1;

@@ -1,16 +1,19 @@
 /// <reference path='fourslash.ts'/>
 
-
 ////interface I {
-////    ["[|prop1|]"]: () => void;
+////    [|["[|{| "isDefinition": true, "contextRangeIndex": 0 |}prop1|]"]: () => void;|]
 ////}
 ////
 ////class C implements I {
-////    ["[|prop1|]"]: any;
+////    [|["[|{| "isDefinition": true, "contextRangeIndex": 2 |}prop1|]"]: any;|]
 ////}
 ////
 ////var x: I = {
-////    ["[|prop1|]"]: function () { },
+////    [|["[|{| "isWriteAccess": true, "isDefinition": true, "contextRangeIndex": 4 |}prop1|]"]: function () { }|],
 ////}
 
-verify.rangesReferenceEachOther();
+const [r0Def, r0, r1Def, r1, r2Def, r2] = test.ranges();
+verify.referenceGroups([r0, r1, r2], [
+    { definition: { text: '(property) I["prop1"]: () => void', range: r0 }, ranges: [r0, r2] },
+    { definition: { text: '(property) C["prop1"]: any', range: r1 }, ranges: [r1] },
+]);

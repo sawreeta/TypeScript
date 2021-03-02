@@ -34,6 +34,17 @@ var t5 = new new Date;
 // Can be an expression
 new String;
 
+// Error on union
+declare const union: { a: string } | { b: string }
+new union;
+
+// Error on union with one constructor
+declare const ctorUnion: { a: string } | (new (a: string) => void)
+new ctorUnion("");
+
+// Error on union with incompatible constructors
+declare const ctorUnion2: (new <T extends number>(a: T) => void) | (new <T>(a: string) => void)
+new ctorUnion2("");
 
 module M {
     export class T {
@@ -69,23 +80,26 @@ var f = new q();
 var t5 = new new Date;
 // Can be an expression
 new String;
+new union;
+new ctorUnion("");
+new ctorUnion2("");
 var M;
 (function (M) {
-    var T = (function () {
+    var T = /** @class */ (function () {
         function T() {
         }
         return T;
     }());
     M.T = T;
 })(M || (M = {}));
-var S = (function () {
+var S = /** @class */ (function () {
     function S() {
     }
     Object.defineProperty(S.prototype, "xs", {
         get: function () {
             return new M.T[];
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return S;

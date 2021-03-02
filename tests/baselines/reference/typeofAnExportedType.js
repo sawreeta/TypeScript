@@ -53,9 +53,11 @@ export var r13: typeof foo;
 
 //// [typeofAnExportedType.js]
 "use strict";
+exports.__esModule = true;
+exports.r13 = exports.foo = exports.r12 = exports.r11 = exports.r10 = exports.E = exports.r9 = exports.r8 = exports.Z = exports.r7 = exports.r6 = exports.M = exports.r5 = exports.i = exports.r4b = exports.r4 = exports.r3 = exports.c = exports.C = exports.r2 = exports.y = exports.r1 = exports.x = void 0;
 exports.x = 1;
 exports.y = { foo: '' };
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
     }
     return C;
@@ -66,7 +68,7 @@ var i2;
 var M;
 (function (M) {
     M.foo = '';
-    var C = (function () {
+    var C = /** @class */ (function () {
         function C() {
         }
         return C;
@@ -74,15 +76,15 @@ var M;
     M.C = C;
 })(M = exports.M || (exports.M = {}));
 exports.Z = M;
+var E;
 (function (E) {
     E[E["A"] = 0] = "A";
-})(exports.E || (exports.E = {}));
-var E = exports.E;
+})(E = exports.E || (exports.E = {}));
 function foo() { }
 exports.foo = foo;
 (function (foo) {
     foo.y = 1;
-    var C = (function () {
+    var C = /** @class */ (function () {
         function C() {
         }
         return C;

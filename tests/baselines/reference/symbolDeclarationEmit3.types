@@ -3,20 +3,23 @@ class C {
 >C : C
 
     [Symbol.toPrimitive](x: number);
->Symbol.toPrimitive : symbol
+>[Symbol.toPrimitive] : { (x: number): any; (x: string): any; }
+>Symbol.toPrimitive : unique symbol
 >Symbol : SymbolConstructor
->toPrimitive : symbol
+>toPrimitive : unique symbol
 >x : number
 
     [Symbol.toPrimitive](x: string);
->Symbol.toPrimitive : symbol
+>[Symbol.toPrimitive] : { (x: number): any; (x: string): any; }
+>Symbol.toPrimitive : unique symbol
 >Symbol : SymbolConstructor
->toPrimitive : symbol
+>toPrimitive : unique symbol
 >x : string
 
     [Symbol.toPrimitive](x: any) { }
->Symbol.toPrimitive : symbol
+>[Symbol.toPrimitive] : { (x: number): any; (x: string): any; }
+>Symbol.toPrimitive : unique symbol
 >Symbol : SymbolConstructor
->toPrimitive : symbol
+>toPrimitive : unique symbol
 >x : any
 }

@@ -1,5 +1,4 @@
 //// [readonlyInNonPropertyParameters.ts]
-
 // `readonly` won't work outside of property parameters
 class X {
 	method(readonly x: number) {}
@@ -11,13 +10,13 @@ class X {
 
 //// [readonlyInNonPropertyParameters.js]
 // `readonly` won't work outside of property parameters
-var X = (function () {
+var X = /** @class */ (function () {
     function X() {
     }
     X.prototype.method = function (x) { };
     Object.defineProperty(X.prototype, "x", {
         set: function (value) { },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return X;

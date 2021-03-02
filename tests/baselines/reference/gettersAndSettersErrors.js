@@ -17,7 +17,7 @@ class E {
 
 
 //// [gettersAndSettersErrors.js]
-var C = (function () {
+var C = /** @class */ (function () {
     function C() {
         this.Foo = 0; // error - duplicate identifier Foo - confirmed
     }
@@ -26,7 +26,7 @@ var C = (function () {
         ,
         set: function (foo) { } // ok
         ,
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(C.prototype, "Goo", {
@@ -34,19 +34,19 @@ var C = (function () {
         ,
         set: function (v) { } // error - setters must not specify a return type
         ,
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return C;
 }());
-var E = (function () {
+var E = /** @class */ (function () {
     function E() {
     }
     Object.defineProperty(E.prototype, "Baz", {
         get: function () { return 0; },
         set: function (n) { } // error - accessors do not agree in visibility
         ,
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return E;
